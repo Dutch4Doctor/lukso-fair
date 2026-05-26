@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LUKSO Slots 🎰</title>
 <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Cabin:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1952,6 +1953,7 @@ async function connectWallet() {
   try {
     showTxOverlay(t('tx_connecting'));
 
+    // UP extensie gebruikt window.lukso, andere wallets window.ethereum
     const provider = window.lukso || window.ethereum;
 
     // Vraag accounts op
@@ -1960,26 +1962,14 @@ async function connectWallet() {
 
     const address = accounts[0];
 
-    // Controleer netwerk
+    // Controleer netwerk — UP extensie ondersteunt geen chain switching
+    // dus alleen een waarschuwing tonen als het verkeerde netwerk
     const chainId = await provider.request({ method: 'eth_chainId' });
-    if (parseInt(chainId, 16) !== CONFIG.CHAIN_ID && !CONFIG.DEMO_MODE) {
-      // Schakel naar LUKSO
-      try {
-        await provider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x' + CONFIG.CHAIN_ID.toString(16) }]
-        });
-      } catch (e) {
-        await provider.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: '0x' + CONFIG.CHAIN_ID.toString(16),
-            chainName: CONFIG.CHAIN_NAME,
-            rpcUrls: [CONFIG.RPC_URL],
-            nativeCurrency: { name: 'LYX', symbol: 'LYX', decimals: 18 },
-          }]
-        });
-      }
+    const currentChainId = parseInt(chainId, 16);
+    if (currentChainId !== CONFIG.CHAIN_ID) {
+      hideTxOverlay();
+      alert(`Please switch to LUKSO Mainnet (Chain ID: ${CONFIG.CHAIN_ID}) in your Universal Profile extension.`);
+      return;
     }
 
     // Haal saldo op
@@ -1987,7 +1977,7 @@ async function connectWallet() {
       method: 'eth_getBalance',
       params: [address, 'latest']
     });
-    const balance = parseInt(balanceHex, 16) / 1e18;
+    const balance = parseFloat((parseInt(balanceHex, 16) / 1e18).toFixed(4));
 
     state.connected = true;
     state.address   = address;
@@ -1996,6 +1986,7 @@ async function connectWallet() {
     updateWalletUI();
     enableButtons();
     await loadSessionData();
+    setTimeout(openLimitModal, 500);
 
     hideTxOverlay();
   } catch (err) {
@@ -2109,23 +2100,88 @@ async function demoSpin(isFreeSpin) {
 
 // On-chain spin (commit/reveal)
 async function onChainSpin(isFreeSpin) {
-  // Stap 1: Genereer geheim getal
-  const secretNumber = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-  const secretBytes  = '0x' + BigInt(secretNumber).toString(16).padStart(64, '0');
+  const provider = new ethers.BrowserProvider(window.lukso || window.ethereum);
+  const signer   = await provider.getSigner();
 
-  // Bereken commit hash (keccak256 van secretNumber + playerAddress)
-  // In productie: gebruik ethers.js of web3.js
+  // Minimale ABI voor spin
+  const FAIR_ABI = [
+    "function commitSpin(bytes32 commitHash) external payable",
+    "function revealSpin(uint256 secret) external",
+    "event SpinRevealed(address indexed player, uint8 r1, uint8 r2, uint8 r3, uint8 prizeType)"
+  ];
+
+  const contract = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
+
+  // Stap 1: Genereer geheim getal en commit hash
+  const secret     = ethers.toBigInt(ethers.randomBytes(32));
+  const secretHex  = ethers.zeroPadValue(ethers.toBeHex(secret), 32);
+  const commitHash = ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(
+      ['uint256', 'address'],
+      [secret, state.address]
+    )
+  );
+
   showTxOverlay(t('tx_step1'));
-  // TODO: Roep commitSpin() aan op het contract
-  // const tx = await fairContract.commitSpin(commitHash, { value: ethers.parseEther('1') });
-  // await tx.wait();
+
+  // Stap 2: commitSpin — betaal 0.1 LYX (of 0 voor free spin)
+  const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
+  const commitTx = await contract.commitSpin(commitHash, { value });
+  await commitTx.wait();
 
   showTxOverlay(t('tx_step2'));
 
-  // TODO: Roep revealSpin() aan
-  // const revealTx = await fairContract.revealSpin(secretNumber);
-  // const receipt = await revealTx.wait();
-  // Lees SpinRevealed event uit receipt
+  // Stap 3: revealSpin
+  const revealTx = await contract.revealSpin(secret);
+  const receipt  = await revealTx.wait();
+
+  // Stap 4: Lees SpinRevealed event uit
+  const iface    = new ethers.Interface(FAIR_ABI);
+  let r1 = 0, r2 = 0, r3 = 0, prizeType = 0;
+  for (const log of receipt.logs) {
+    try {
+      const parsed = iface.parseLog(log);
+      if (parsed && parsed.name === 'SpinRevealed') {
+        r1 = Number(parsed.args.r1);
+        r2 = Number(parsed.args.r2);
+        r3 = Number(parsed.args.r3);
+        prizeType = Number(parsed.args.prizeType);
+        break;
+      }
+    } catch(e) {}
+  }
+
+  // Stap 5: Vertaal symbool IDs naar frontend symbolen
+  const sym1 = SYMBOLS.find(s => s.id === r1) || SYMBOLS[0];
+  const sym2 = SYMBOLS.find(s => s.id === r2) || SYMBOLS[0];
+  const sym3 = SYMBOLS.find(s => s.id === r3) || SYMBOLS[0];
+
+  // Stap 6: Animeer de rollen met de echte uitkomst
+  await animateReels(sym1, sym2, sym3);
+
+  // Stap 7: Verwerk de prijs
+  const prizeMap = {
+    0: PRIZES.NONE, 1: PRIZES.JACKPOT_NFT, 2: PRIZES.RARE_NFT,
+    3: PRIZES.PHLAME_MED, 4: PRIZES.AGENTPO, 5: PRIZES.SLYX_LARGE,
+    6: PRIZES.UNCOMMON_NFT, 7: PRIZES.COMMON_NFT,
+    8: PRIZES.LYX_LARGE, 9: PRIZES.LYX_SMALL,
+    10: PRIZES.FREE_5, 11: PRIZES.FREE_3, 12: PRIZES.CONSOLATION,
+  };
+  const prize = prizeMap[prizeType] || PRIZES.NONE;
+  processPrize(prize, isFreeSpin);
+
+  // Stap 8: Update saldo
+  const balHex = await (window.lukso || window.ethereum).request({
+    method: 'eth_getBalance', params: [state.address, 'latest']
+  });
+  state.balance = parseFloat((parseInt(balHex, 16) / 1e18).toFixed(4));
+  updateWalletUI();
+
+  // Stap 9: Update sessielimiet
+  if (state.sessionLimit && !isFreeSpin) {
+    state.sessionLimitUsed = (state.sessionLimitUsed || 0) + 0.1;
+    checkSessionLimit();
+  }
 
   hideTxOverlay();
 }
