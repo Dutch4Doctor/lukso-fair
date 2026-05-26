@@ -1748,10 +1748,10 @@ function setLang(lang) {
 //  CONFIGURATIE
 // ═══════════════════════════════════════════════
 const CONFIG = {
-  FAIR_CONTRACT:      '0x75227Dc417427830aCF3250f949AbD1a8253fA21',
+  FAIR_CONTRACT:      '0xA95834c9200CD2ea2936C0F19bde60e3369BD974',
   NFT_CONTRACT:       '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
   SPIN_TOKEN:         '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  SESSION_MANAGER:    '0x2Ba6Bc9ED5D794d2377F9327017392C12577Ad4C',
+  SESSION_MANAGER:    '0xd285967Faf5C1320001d116568318d6dC91c0136',
   SPIN_COST_LYX:      '0.1',
 
   // LUKSO Mainnet RPC
@@ -2130,9 +2130,8 @@ async function onChainSpin(isFreeSpin) {
 
   showTxOverlay(t('tx_step1'));
 
-  let commitTx;
   if (!isFreeSpin && CONFIG.SESSION_MANAGER) {
-    // Gebruik SessionManager — geen LYX per spin nodig
+    // Gebruik SessionManager
     const sm = new ethers.Contract(CONFIG.SESSION_MANAGER, SM_ABI, signer);
 
     // Check of er genoeg tegoed is
@@ -2143,13 +2142,14 @@ async function onChainSpin(isFreeSpin) {
       return;
     }
 
-    // Eén transactie: deductSpin + commitSpin gecombineerd
-    commitTx = await fair.commitSpin(commitHash, { value: 0n });
-  } else {
-    // Free spin of geen SessionManager — betaal direct
-    const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
-    commitTx = await fair.commitSpin(commitHash, { value });
+    // Stap 1a: deductSpin — SessionManager trekt 0.1 LYX af en stuurt door naar contract
+    const deductTx = await sm.deductSpin(state.address);
+    await deductTx.wait();
   }
+
+  // Stap 1b: commitSpin — contract heeft al 0.1 LYX ontvangen via SessionManager
+  const value = isFreeSpin ? 0n : (CONFIG.SESSION_MANAGER ? 0n : ethers.parseEther('0.1'));
+  const commitTx = await fair.commitSpin(commitHash, { value });
   await commitTx.wait();
 
   showTxOverlay(t('tx_step2'));
@@ -2716,8 +2716,8 @@ window.LUKSOFairAPI = {
 
   // ── Contract info ────────────────────────────────────────────
   contracts: {
-    FAIR_CONTRACT:   '0x75227Dc417427830aCF3250f949AbD1a8253fA21',
-    NFT_CONTRACT:    '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
+    FAIR_CONTRACT:   '0xA95834c9200CD2ea2936C0F19bde60e3369BD974',
+    NFT_CONTRACT:    '0x9a85455155166726Fe20CC2C7Ba8CfC39b6A3826',
     SPIN_TOKEN:      '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
     CHAIN_ID:        42,
     RPC_URL:         'https://rpc.mainnet.lukso.network',
