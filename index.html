@@ -1722,7 +1722,8 @@ function setLang(lang) {
     }
   }
 
-  // Update PRIZES labels
+  // Update PRIZES labels — null-safe
+  try {
   PRIZES.NONE.label         = null;
   PRIZES.JACKPOT_NFT.label  = t('prize_jackpot');
   PRIZES.RARE_NFT.label     = t('prize_rare_nft');
@@ -1731,13 +1732,10 @@ function setLang(lang) {
   PRIZES.SLYX_LARGE.label   = t('prize_slyx_large');
   PRIZES.UNCOMMON_NFT.label = t('prize_uncommon_nft');
   PRIZES.COMMON_NFT.label   = t('prize_common_nft');
-  PRIZES.SLYX_SMALL.label   = t('prize_slyx_small');
   PRIZES.LYX_LARGE.label    = t('prize_lyx_large');
   PRIZES.LYX_SMALL.label    = t('prize_lyx_small');
   PRIZES.FREE_5.label       = t('prize_5_free');
   PRIZES.FREE_3.label       = t('prize_3_free');
-  PRIZES.FREE_2.label       = t('prize_2_free');
-  PRIZES.FREE_1.label       = t('prize_1_free');
   PRIZES.CONSOLATION.label  = t('prize_consolation');
 
   // Update NFT lijst (tiers in juiste taal)
