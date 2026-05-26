@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.0.2/ethers.umd.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LUKSO Slots 🎰</title>
 <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Cabin:wght@400;600;700&display=swap" rel="stylesheet">
@@ -1725,19 +1725,20 @@ function setLang(lang) {
 
   // Update PRIZES labels — null-safe
   try {
-  PRIZES.NONE.label         = null;
-  PRIZES.JACKPOT_NFT.label  = t('prize_jackpot');
-  PRIZES.RARE_NFT.label     = t('prize_rare_nft');
-  PRIZES.PHLAME_MED.label   = t('prize_phlame_med');
-  PRIZES.AGENTPO.label      = t('prize_agentpo');
-  PRIZES.SLYX_LARGE.label   = t('prize_slyx_large');
-  PRIZES.UNCOMMON_NFT.label = t('prize_uncommon_nft');
-  PRIZES.COMMON_NFT.label   = t('prize_common_nft');
-  PRIZES.LYX_LARGE.label    = t('prize_lyx_large');
-  PRIZES.LYX_SMALL.label    = t('prize_lyx_small');
-  PRIZES.FREE_5.label       = t('prize_5_free');
-  PRIZES.FREE_3.label       = t('prize_3_free');
-  PRIZES.CONSOLATION.label  = t('prize_consolation');
+    if (PRIZES.NONE)         PRIZES.NONE.label         = null;
+    if (PRIZES.JACKPOT_NFT)  PRIZES.JACKPOT_NFT.label  = t('prize_jackpot');
+    if (PRIZES.RARE_NFT)     PRIZES.RARE_NFT.label     = t('prize_rare_nft');
+    if (PRIZES.PHLAME_MED)   PRIZES.PHLAME_MED.label   = t('prize_phlame_med');
+    if (PRIZES.AGENTPO)      PRIZES.AGENTPO.label      = t('prize_agentpo');
+    if (PRIZES.SLYX_LARGE)   PRIZES.SLYX_LARGE.label   = t('prize_slyx_large');
+    if (PRIZES.UNCOMMON_NFT) PRIZES.UNCOMMON_NFT.label = t('prize_uncommon_nft');
+    if (PRIZES.COMMON_NFT)   PRIZES.COMMON_NFT.label   = t('prize_common_nft');
+    if (PRIZES.LYX_LARGE)    PRIZES.LYX_LARGE.label    = t('prize_lyx_large');
+    if (PRIZES.LYX_SMALL)    PRIZES.LYX_SMALL.label    = t('prize_lyx_small');
+    if (PRIZES.FREE_5)       PRIZES.FREE_5.label       = t('prize_5_free');
+    if (PRIZES.FREE_3)       PRIZES.FREE_3.label       = t('prize_3_free');
+    if (PRIZES.CONSOLATION)  PRIZES.CONSOLATION.label  = t('prize_consolation');
+  } catch(e) { console.warn('Prize label error:', e); }
 
   // Update NFT lijst (tiers in juiste taal)
   updateSessionUI();
