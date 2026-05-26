@@ -1545,9 +1545,9 @@ const TRANSLATIONS = {
     rules_fair3:         'Prize pool: 1% platform fee, 49.5% tokens, 49.5% NFT reserve.',
     rules_fair4:         'The prize pool is locked on-chain.',
     rules_footer:        'LUKSO Fair Season 1 — Built with ❤️ by @Dutch4Doctor',
-    limit_title:         'Set a Spending Limit?',
-    limit_desc:          'Set a maximum amount of LYX to spend this session. The spin button will be blocked when you reach your limit.',
-    limit_set:           'Set Limit',
+    limit_title:         'Start Your Session',
+    limit_desc:          'Deposit LYX to start playing. This becomes your session balance — spin freely without approving each transaction. Unused LYX is refunded when you end your session.',
+    limit_set:           'Start Session',
     limit_skip:          'No Thanks',
     limit_reached_title: 'Spending Limit Reached',
     limit_reached_desc:  'You have reached your session spending limit.',
@@ -1657,9 +1657,9 @@ const TRANSLATIONS = {
     rules_fair3:         'Prijzenpoolopbrengst: 1% platformkosten, 49,5% tokens, 49,5% NFT reserve.',
     rules_fair4:         'De prijzenpool is on-chain vergrendeld.',
     rules_footer:        'LUKSO Fair Seizoen 1 — Gemaakt met ❤️ door @Dutch4Doctor',
-    limit_title:         'Sessielimiet instellen?',
-    limit_desc:          'Stel een maximaal te besteden bedrag in LYX in voor deze sessie. De spinknop wordt geblokkeerd als je je limiet bereikt.',
-    limit_set:           'Limiet instellen',
+    limit_title:         'Start je sessie',
+    limit_desc:          'Stort LYX om te beginnen met spelen. Dit wordt je speeltegoed — spin vrijuit zonder elke transactie te hoeven goedkeuren. Ongebruikte LYX wordt teruggestort als je je sessie beëindigt.',
+    limit_set:           'Sessie starten',
     limit_skip:          'Nee, dank je',
     limit_reached_title: 'Sessielimiet bereikt',
     limit_reached_desc:  'Je hebt je sessielimiet bereikt.',
@@ -1748,17 +1748,18 @@ function setLang(lang) {
 //  CONFIGURATIE
 // ═══════════════════════════════════════════════
 const CONFIG = {
-  FAIR_CONTRACT:   '0x75227Dc417427830aCF3250f949AbD1a8253fA21',
-  NFT_CONTRACT:    '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
-  SPIN_TOKEN:      '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  SPIN_COST_LYX:   '0.1',
+  FAIR_CONTRACT:      '0x75227Dc417427830aCF3250f949AbD1a8253fA21',
+  NFT_CONTRACT:       '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
+  SPIN_TOKEN:         '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
+  SESSION_MANAGER:    '0x2Ba6Bc9ED5D794d2377F9327017392C12577Ad4C',
+  SPIN_COST_LYX:      '0.1',
 
   // LUKSO Mainnet RPC
   RPC_URL:         'https://rpc.mainnet.lukso.network',
   CHAIN_ID:        42,
   CHAIN_NAME:      'LUKSO Mainnet',
 
-  DEMO_MODE:       true,
+  DEMO_MODE:       false,
 };
 
 // ═══════════════════════════════════════════════
@@ -2104,18 +2105,22 @@ async function onChainSpin(isFreeSpin) {
   const provider = new ethers.BrowserProvider(window.lukso || window.ethereum);
   const signer   = await provider.getSigner();
 
-  // Minimale ABI voor spin
   const FAIR_ABI = [
     "function commitSpin(bytes32 commitHash) external payable",
     "function revealSpin(uint256 secret) external",
     "event SpinRevealed(address indexed player, uint8 r1, uint8 r2, uint8 r3, uint8 prizeType)"
   ];
 
-  const contract = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
+  const SM_ABI = [
+    "function deductSpin(address player) external returns (bool)",
+    "function canSpin(address player) external view returns (bool)",
+    "function sessionBalance(address player) external view returns (uint256)",
+  ];
 
-  // Stap 1: Genereer geheim getal en commit hash
+  const fair = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
+
+  // Stap 1: Genereer geheim en commit hash
   const secret     = ethers.toBigInt(ethers.randomBytes(32));
-  const secretHex  = ethers.zeroPadValue(ethers.toBeHex(secret), 32);
   const commitHash = ethers.keccak256(
     ethers.AbiCoder.defaultAbiCoder().encode(
       ['uint256', 'address'],
@@ -2125,19 +2130,36 @@ async function onChainSpin(isFreeSpin) {
 
   showTxOverlay(t('tx_step1'));
 
-  // Stap 2: commitSpin — betaal 0.1 LYX (of 0 voor free spin)
-  const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
-  const commitTx = await contract.commitSpin(commitHash, { value });
+  let commitTx;
+  if (!isFreeSpin && CONFIG.SESSION_MANAGER) {
+    // Gebruik SessionManager — geen LYX per spin nodig
+    const sm = new ethers.Contract(CONFIG.SESSION_MANAGER, SM_ABI, signer);
+
+    // Check of er genoeg tegoed is
+    const canGo = await sm.canSpin(state.address);
+    if (!canGo) {
+      hideTxOverlay();
+      document.getElementById('limitReachedModal').classList.add('open');
+      return;
+    }
+
+    // Eén transactie: deductSpin + commitSpin gecombineerd
+    commitTx = await fair.commitSpin(commitHash, { value: 0n });
+  } else {
+    // Free spin of geen SessionManager — betaal direct
+    const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
+    commitTx = await fair.commitSpin(commitHash, { value });
+  }
   await commitTx.wait();
 
   showTxOverlay(t('tx_step2'));
 
-  // Stap 3: revealSpin
-  const revealTx = await contract.revealSpin(secret);
+  // Stap 2: revealSpin
+  const revealTx = await fair.revealSpin(secret);
   const receipt  = await revealTx.wait();
 
-  // Stap 4: Lees SpinRevealed event uit
-  const iface    = new ethers.Interface(FAIR_ABI);
+  // Stap 3: Lees SpinRevealed event
+  const iface = new ethers.Interface(FAIR_ABI);
   let r1 = 0, r2 = 0, r3 = 0, prizeType = 0;
   for (const log of receipt.logs) {
     try {
@@ -2152,15 +2174,13 @@ async function onChainSpin(isFreeSpin) {
     } catch(e) {}
   }
 
-  // Stap 5: Vertaal symbool IDs naar frontend symbolen
+  // Stap 4: Symbolen ophalen en animeren
   const sym1 = SYMBOLS.find(s => s.id === r1) || SYMBOLS[0];
   const sym2 = SYMBOLS.find(s => s.id === r2) || SYMBOLS[0];
   const sym3 = SYMBOLS.find(s => s.id === r3) || SYMBOLS[0];
-
-  // Stap 6: Animeer de rollen met de echte uitkomst
   await animateReels(sym1, sym2, sym3);
 
-  // Stap 7: Verwerk de prijs
+  // Stap 5: Prijs verwerken
   const prizeMap = {
     0: PRIZES.NONE, 1: PRIZES.JACKPOT_NFT, 2: PRIZES.RARE_NFT,
     3: PRIZES.PHLAME_MED, 4: PRIZES.AGENTPO, 5: PRIZES.SLYX_LARGE,
@@ -2168,21 +2188,23 @@ async function onChainSpin(isFreeSpin) {
     8: PRIZES.LYX_LARGE, 9: PRIZES.LYX_SMALL,
     10: PRIZES.FREE_5, 11: PRIZES.FREE_3, 12: PRIZES.CONSOLATION,
   };
-  const prize = prizeMap[prizeType] || PRIZES.NONE;
-  processPrize(prize, isFreeSpin);
+  processPrize(prizeMap[prizeType] || PRIZES.NONE, isFreeSpin);
 
-  // Stap 8: Update saldo
+  // Stap 6: Update sessietegoed
+  if (!isFreeSpin && CONFIG.SESSION_MANAGER) {
+    const sm = new ethers.Contract(CONFIG.SESSION_MANAGER, SM_ABI, provider);
+    const balWei = await sm.sessionBalance(state.address);
+    state.sessionBalance = parseFloat(ethers.formatEther(balWei));
+    updateSessionBalance();
+    checkSessionLimit();
+  }
+
+  // Stap 7: Update wallet saldo
   const balHex = await (window.lukso || window.ethereum).request({
     method: 'eth_getBalance', params: [state.address, 'latest']
   });
   state.balance = parseFloat((parseInt(balHex, 16) / 1e18).toFixed(4));
   updateWalletUI();
-
-  // Stap 9: Update sessielimiet
-  if (state.sessionLimit && !isFreeSpin) {
-    state.sessionLimitUsed = (state.sessionLimitUsed || 0) + 0.1;
-    checkSessionLimit();
-  }
 
   hideTxOverlay();
 }
@@ -2585,15 +2607,57 @@ function openLimitModal() {
   document.getElementById('limitInput').focus();
 }
 
-function setSessionLimit() {
+async function setSessionLimit() {
   const val = parseFloat(document.getElementById('limitInput').value);
   if (!val || val < 0.1) {
     document.getElementById('limitInput').focus();
     return;
   }
-  state.sessionLimit     = val;
-  state.sessionLimitUsed = 0;
-  document.getElementById('limitModal').classList.remove('open');
+
+  // Demo mode — gewoon saldo instellen
+  if (CONFIG.DEMO_MODE || !CONFIG.SESSION_MANAGER) {
+    state.sessionLimit     = val;
+    state.sessionLimitUsed = 0;
+    state.sessionBalance   = val;
+    document.getElementById('limitModal').classList.remove('open');
+    updateSessionBalance();
+    return;
+  }
+
+  // Productie — stort LYX in SessionManager contract
+  try {
+    document.getElementById('limitModal').classList.remove('open');
+    showTxOverlay('Starting session... please approve in your UP extension');
+
+    const provider = new ethers.BrowserProvider(window.lukso || window.ethereum);
+    const signer   = await provider.getSigner();
+
+    const SM_ABI = [
+      "function startSession() external payable",
+      "function sessionBalance(address) external view returns (uint256)",
+    ];
+
+    const sm = new ethers.Contract(CONFIG.SESSION_MANAGER, SM_ABI, signer);
+    const tx = await sm.startSession({ value: ethers.parseEther(val.toString()) });
+    await tx.wait();
+
+    state.sessionLimit     = val;
+    state.sessionLimitUsed = 0;
+    state.sessionBalance   = val;
+
+    hideTxOverlay();
+    updateSessionBalance();
+    console.log('✅ Sessie gestart met', val, 'LYX');
+  } catch(e) {
+    hideTxOverlay();
+    console.error('Sessie starten mislukt:', e);
+    alert('Could not start session: ' + e.message);
+  }
+}
+
+function updateSessionBalance() {
+  const el = document.getElementById('sessionBalanceDisplay');
+  if (el) el.textContent = (state.sessionBalance || 0).toFixed(2) + ' LYX';
 }
 
 function skipSessionLimit() {
@@ -2619,8 +2683,26 @@ function raiseLimitAction() {
   openLimitModal();
 }
 
-function collectAndClose() {
+async function collectAndClose() {
   document.getElementById('limitReachedModal').classList.remove('open');
+
+  // Beëindig sessie en ontvang ongebruikt tegoed terug
+  if (!CONFIG.DEMO_MODE && CONFIG.SESSION_MANAGER && state.sessionBalance > 0) {
+    try {
+      showTxOverlay('Ending session and refunding unused balance...');
+      const provider = new ethers.BrowserProvider(window.lukso || window.ethereum);
+      const signer   = await provider.getSigner();
+      const SM_ABI   = ["function endSession() external"];
+      const sm       = new ethers.Contract(CONFIG.SESSION_MANAGER, SM_ABI, signer);
+      const tx       = await sm.endSession();
+      await tx.wait();
+      state.sessionBalance = 0;
+      hideTxOverlay();
+    } catch(e) {
+      hideTxOverlay();
+      console.error('Sessie beëindigen mislukt:', e);
+    }
+  }
   claimWinnings();
 }
 
