@@ -2032,7 +2032,8 @@ function updateClaimButton() {
   const s = state.session;
   const hasWinnings = s.slyx > 0 || s.phlame > 0 || s.agentpo > 0 ||
                       s.freeSpinsEarned > 0 || s.nfts.length > 0;
-  document.getElementById('btnClaim').disabled = !hasWinnings || !state.connected;
+  const hasSession = (state.sessionBalance || 0) > 0;
+  document.getElementById('btnClaim').disabled = (!hasWinnings && !hasSession) || !state.connected;
 }
 
 // ═══════════════════════════════════════════════
@@ -2415,7 +2416,8 @@ async function claimWinnings() {
   const s = state.session;
   const hasWinnings = s.slyx > 0 || s.phlame > 0 || s.agentpo > 0 ||
                       s.freeSpinsEarned > 0 || s.nfts.length > 0;
-  if (!hasWinnings) return;
+  const hasSessionBalance = (state.sessionBalance || 0) > 0;
+  if (!hasWinnings && !hasSessionBalance) return;
 
   if (CONFIG.DEMO_MODE) {
     state.lastClaimed = { ...s, nfts: [...s.nfts] };
@@ -2427,10 +2429,39 @@ async function claimWinnings() {
     return;
   }
 
-  // On-chain claim
+  // On-chain claim — beëindig ook alle actieve sessies op oude contracts
   showTxOverlay(t('tx_claiming'));
   try {
-    // TODO: Call claimWinnings() on the contract
+    const provider = new ethers.BrowserProvider(window.lukso || window.ethereum);
+    const signer   = await provider.getSigner();
+    const SM_ABI   = [
+      "function hasActiveSession(address) external view returns (bool)",
+      "function sessionBalance(address) external view returns (uint256)",
+      "function endSession() external",
+    ];
+
+    // Alle SessionManager versies controleren en leegmaken
+    const allManagers = [
+      '0x2Ba6Bc9ED5D794d2377F9327017392C12577Ad4C', // v1
+      '0xd285967Faf5C1320001d116568318d6dC91c0136', // v2
+      '0x1A406E8033e4f1C5a3B85D65bd443E4254692c27', // v3 (huidig)
+    ];
+
+    for (const smAddr of allManagers) {
+      try {
+        const sm = new ethers.Contract(smAddr, SM_ABI, signer);
+        const active  = await sm.hasActiveSession(state.address);
+        const balance = await sm.sessionBalance(state.address);
+        if (active && balance > 0n) {
+          console.log(`Sessie beëindigen op ${smAddr}, saldo: ${ethers.formatEther(balance)} LYX`);
+          const tx = await sm.endSession();
+          await tx.wait();
+          console.log(`✅ Refund ontvangen van ${smAddr}`);
+        }
+      } catch(e) {
+        console.warn(`SessionManager ${smAddr} overgeslagen:`, e.message);
+      }
+    }
     hideTxOverlay();
     state.lastClaimed = { ...s, nfts: [...s.nfts] };
     resetSession();
