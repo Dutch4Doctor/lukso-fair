@@ -536,6 +536,164 @@ body::before {
 .limit-fill.warn { background: var(--warn); }
 .limit-fill.danger { background: var(--danger); }
 
+.limit-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 1002;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.limit-modal.open { display: flex; }
+.limit-modal-inner {
+  background: linear-gradient(180deg, #0d0020 0%, #1a0033 100%);
+  border: 2px solid var(--purple);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+}
+.limit-modal-inner h2 {
+  color: var(--gold);
+  font-size: 17px;
+  margin: 0 0 8px 0;
+}
+.limit-modal-inner p {
+  color: #bbb;
+  font-size: 13px;
+  margin: 0 0 20px 0;
+  line-height: 1.6;
+}
+.limit-input-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.limit-input {
+  background: #1a0033;
+  border: 1px solid var(--purple);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 16px;
+  width: 120px;
+  text-align: center;
+}
+.limit-input:focus { outline: none; border-color: var(--gold); }
+.limit-unit { color: var(--gold); font-weight: 700; }
+.limit-btn-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.limit-btn-set {
+  background: linear-gradient(135deg, var(--purple), #440088);
+  border: none;
+  color: white;
+  padding: 11px 22px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.limit-btn-set:hover { transform: translateY(-2px); }
+.limit-btn-skip {
+  background: transparent;
+  border: 1px solid #555;
+  color: #aaa;
+  padding: 11px 22px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.limit-btn-skip:hover { border-color: #888; color: #ccc; }
+
+/* Limiet bereikt modal */
+.limit-reached-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 1003;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.limit-reached-modal.open { display: flex; }
+.limit-reached-inner {
+  background: linear-gradient(180deg, #1a0000 0%, #2d0000 100%);
+  border: 2px solid #ff4444;
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+.limit-reached-inner h2 {
+  color: #ff6666;
+  font-size: 17px;
+  margin: 0 0 8px 0;
+}
+.limit-reached-inner p {
+  color: #ccc;
+  font-size: 13px;
+  margin: 0 0 20px 0;
+  line-height: 1.6;
+}
+.limit-reached-btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-raise-limit {
+  background: linear-gradient(135deg, #ff4444, #aa0000);
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-raise-limit:hover { transform: translateY(-2px); }
+.btn-collect-limit {
+  background: linear-gradient(135deg, var(--green, #34c759), #1a6e2e);
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-collect-limit:hover { transform: translateY(-2px); }
+
+/* ═══════════════════════════════════════════════
+   UITBETALINGSTABEL MODAL
+═══════════════════════════════════════════════ */
+.payout-btn {
+  background: linear-gradient(135deg, #1a0033, #2d0055);
+  border: 1px solid var(--purple);
+  color: var(--gold);
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
 /* ═══════════════════════════════════════════════
    INFO MODAL
 ═══════════════════════════════════════════════ */
@@ -1194,6 +1352,7 @@ async function connectWallet() {
 
     updateUI();
     enableSpins();
+    openLimitModal();
     showMsg(t('connect_to_play').replace('Connect', '✅'), 'info');
   } catch (e) {
     console.error('Connect error:', e);
@@ -1681,6 +1840,48 @@ function buildPayoutTable() {
   `).join('');
 }
 </script>
+══════════════════════════════════════════ -->
+<div id="limitModal" class="limit-modal">
+  <div class="limit-modal-inner">
+    <h2>🎰 <span data-i18n="limit_title">Set a Spending Limit?</span></h2>
+    <p data-i18n="limit_desc">You can set a maximum amount of LYX to spend this session. The spin button will be blocked when you reach your limit.</p>
+    <div class="limit-input-row">
+      <input type="number" id="limitInput" class="limit-input" min="0.1" step="0.1" placeholder="0.0">
+      <span class="limit-unit">LYX</span>
+    </div>
+    <div class="limit-btn-row">
+      <button class="limit-btn-set" onclick="setSessionLimit()">
+        <span data-i18n="limit_set">Set Limit</span>
+      </button>
+      <button class="limit-btn-skip" onclick="skipSessionLimit()">
+        <span data-i18n="limit_skip">No Thanks</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LIMIET BEREIKT MODAL
+══════════════════════════════════════════ -->
+<div id="limitReachedModal" class="limit-reached-modal">
+  <div class="limit-reached-inner">
+    <h2>⛔ <span data-i18n="limit_reached_title">Spending Limit Reached</span></h2>
+    <p id="limitReachedText" data-i18n="limit_reached_desc">You have reached your session spending limit.</p>
+    <div class="limit-reached-btn-row">
+      <button class="btn-raise-limit" onclick="raiseLimitAction()">
+        📈 <span data-i18n="limit_raise">Raise My Limit</span>
+      </button>
+      <button class="btn-collect-limit" onclick="collectAndClose()">
+        💰 <span data-i18n="limit_collect">Collect My Winnings</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
+
 <!-- INFO KNOP -->
 <button class="info-btn" onclick="document.getElementById('infoModal').classList.add('visible')">ℹ️</button>
 
