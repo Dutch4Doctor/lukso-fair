@@ -2106,39 +2106,87 @@ async function demoSpin(isFreeSpin) {
 // On-chain spin (commit/reveal)
 async function onChainSpin(isFreeSpin) {
   const provider = window.lukso || window.ethereum;
-  const ethProvider = new ethers.BrowserProvider(provider);
-  const signer = await ethProvider.getSigner();
-  const contract = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
-
+  
   try {
     showTxOverlay('Spinning...', '');
 
-    // Één transactie — geen commit/reveal meer!
-    const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
-    const tx = await contract.spin({ value, gasLimit: 400000 });
+    // Codeer de spin() functie aanroep
+    const spinSelector = '0x534bf046'; // keccak256("spin()").slice(0,4)
+    const value = isFreeSpin ? '0x0' : '0x' + (BigInt('100000000000000000')).toString(16); // 0.1 LYX
+
+    // Stuur direct via eth_sendTransaction
+    const txHash = await provider.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        from: state.address,
+        to: CONFIG.FAIR_CONTRACT,
+        value: value,
+        data: spinSelector,
+        gas: '0x61A80', // 400000 gas
+      }]
+    });
 
     showTxOverlay('Waiting for confirmation...', '');
-    const receipt = await tx.wait();
+
+    // Wacht op bevestiging
+    let receipt = null;
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      receipt = await provider.request({
+        method: 'eth_getTransactionReceipt',
+        params: [txHash]
+      });
+      if (receipt) break;
+    }
 
     hideTxOverlay();
 
-    // Lees SpinRevealed event uit
-    const iface = new ethers.Interface(FAIR_ABI);
-    let r1 = 0, r2 = 0, r3 = 0, prizeType = 0;
-    for (const log of receipt.logs) {
-      try {
-        const parsed = iface.parseLog(log);
-        if (parsed && parsed.name === 'SpinRevealed') {
-          r1 = Number(parsed.args.r1);
-          r2 = Number(parsed.args.r2);
-          r3 = Number(parsed.args.r3);
-          prizeType = Number(parsed.args.prizeType);
-          break;
-        }
-      } catch(e) {}
+    if (!receipt || receipt.status === '0x0') {
+      showMsg('⚠️ Transaction failed', 'warn');
+      state.spinning = false;
+      return;
     }
 
-    // Animeer rollen met echte uitkomst
+    // Lees SpinRevealed event uit logs
+    let r1 = 0, r2 = 0, r3 = 0, prizeType = 0;
+    const spinRevealedTopic = '0x' + 'SpinRevealed(address,uint8,uint8,uint8,uint8,bool)'
+      .split('').reduce((h,c) => h, ''); // placeholder
+
+    // Decodeer logs
+    if (receipt.logs && receipt.logs.length > 0) {
+      for (const log of receipt.logs) {
+        if (log.topics && log.topics.length >= 5) {
+          try {
+            r1 = parseInt(log.topics[2], 16);
+            r2 = parseInt(log.topics[3], 16);
+            r3 = parseInt(log.data?.slice(0,66) || '0', 16) % 10;
+            prizeType = parseInt(log.data?.slice(66,130) || '0', 16) % 13;
+          } catch(e) {}
+          break;
+        }
+      }
+    }
+
+    // Gebruik ethers voor betere log parsing
+    try {
+      const iface = new ethers.Interface([
+        "event SpinRevealed(address indexed player, uint8 r1, uint8 r2, uint8 r3, uint8 prizeType, bool isFreeSpin)"
+      ]);
+      for (const log of receipt.logs || []) {
+        try {
+          const parsed = iface.parseLog(log);
+          if (parsed && parsed.name === 'SpinRevealed') {
+            r1 = Number(parsed.args.r1);
+            r2 = Number(parsed.args.r2);
+            r3 = Number(parsed.args.r3);
+            prizeType = Number(parsed.args.prizeType);
+            break;
+          }
+        } catch(e) {}
+      }
+    } catch(e) {}
+
+    // Animeer rollen
     const sym1 = SYMBOLS.find(s => s.id === r1) || SYMBOLS[0];
     const sym2 = SYMBOLS.find(s => s.id === r2) || SYMBOLS[0];
     const sym3 = SYMBOLS.find(s => s.id === r3) || SYMBOLS[0];
@@ -2167,7 +2215,7 @@ async function onChainSpin(isFreeSpin) {
   } catch(e) {
     hideTxOverlay();
     console.error('Spin error:', e);
-    const msg = e.reason || e.shortMessage || e.message || 'Transaction failed';
+    const msg = e.message || 'Transaction failed';
     showMsg('⚠️ ' + String(msg).slice(0, 100), 'warn');
     state.spinning = false;
   }
