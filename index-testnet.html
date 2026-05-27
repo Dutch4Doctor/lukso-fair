@@ -1412,6 +1412,18 @@ async function onChainSpin(isFreeSpin) {
     );
 
     const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
+    // Simuleer eerst om revert reden te zien
+    try {
+      await contract.commitSpin.staticCall(commitHash, { value, from: state.address });
+      showMsg('Simulatie OK - versturen...', 'info');
+    } catch(simErr) {
+      hideTxOverlay();
+      const reason = simErr.reason || simErr.revert?.args?.[0] || simErr.shortMessage || simErr.message || 'Simulation failed';
+      showMsg('Revert reden: ' + String(reason).slice(0, 120), 'warn');
+      state.spinning = false;
+      return;
+    }
+
     const commitTx = await contract.commitSpin(commitHash, { value, gasLimit: 500000 });
     await commitTx.wait();
 
@@ -1473,7 +1485,10 @@ async function onChainSpin(isFreeSpin) {
   } catch (e) {
     hideTxOverlay();
     console.error('Spin error:', e);
-    showMsg('⚠️ ' + (e.reason || e.message || 'Transaction failed'), 'warn');
+    // Toon uitgebreide foutmelding
+    const errMsg = e.reason || e.revert?.args?.[0] || e.data || e.message || 'Unknown error';
+    const shortErr = String(errMsg).slice(0, 120);
+    showMsg('⚠️ ' + shortErr, 'warn');
     state.spinning = false;
   }
 }
