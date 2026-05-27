@@ -1376,6 +1376,25 @@ async function onChainSpin(isFreeSpin) {
   const contract    = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
 
   try {
+    // Stap 1: Test eerst of contract bereikbaar is
+    try {
+      const rpc = new ethers.JsonRpcProvider(CONFIG.LUKSO_RPC);
+      const c2  = new ethers.Contract(CONFIG.FAIR_CONTRACT, [
+        "function spinToken() view returns (address)",
+        "function paused() view returns (bool)",
+        "function owner() view returns (address)",
+      ], rpc);
+      const [spin, paused, owner] = await Promise.all([
+        c2.spinToken(), c2.paused(), c2.owner()
+      ]);
+      const msg = 'spin:' + spin.slice(0,6) + ' paused:' + paused + ' owner:' + owner.slice(0,6);
+      showMsg(msg, 'info');
+      await new Promise(r => setTimeout(r, 4000));
+    } catch(e) {
+      showMsg('Contract check error: ' + e.message.slice(0,60), 'warn');
+      state.spinning = false; hideTxOverlay(); return;
+    }
+
     // Stap 1: Commit
     showMsg(t('commit'), 'info');
     showTxOverlay(t('commit'), '1/2');
