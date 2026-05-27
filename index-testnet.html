@@ -1384,10 +1384,15 @@ async function onChainSpin(isFreeSpin) {
         "function paused() view returns (bool)",
         "function owner() view returns (address)",
       ], rpc);
-      const [spin, paused, owner] = await Promise.all([
-        c2.spinToken(), c2.paused(), c2.owner()
+      const c2nft = new ethers.Contract(CONFIG.FAIR_CONTRACT, [
+        "function spinToken() view returns (address)",
+        "function nftContract() view returns (address)",
+        "function paused() view returns (bool)",
+      ], rpc);
+      const [spin, nft, paused] = await Promise.all([
+        c2.spinToken(), c2nft.nftContract(), c2.paused()
       ]);
-      const msg = 'spin:' + spin.slice(0,6) + ' paused:' + paused + ' owner:' + owner.slice(0,6);
+      const msg = 'spin:' + spin.slice(0,6) + ' nft:' + nft.slice(0,6) + ' paused:' + paused;
       showMsg(msg, 'info');
       await new Promise(r => setTimeout(r, 4000));
     } catch(e) {
