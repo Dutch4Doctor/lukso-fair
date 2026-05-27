@@ -1546,7 +1546,7 @@ async function onChainSpin(isFreeSpin) {
     );
 
     const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
-    const commitTx = await contract.commitSpin(commitHash, { value });
+    const commitTx = await contract.commitSpin(commitHash, { value, gasLimit: 300000 });
     await commitTx.wait();
 
     // Stap 2: Reveal
