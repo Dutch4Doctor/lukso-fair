@@ -1553,6 +1553,29 @@ async function onChainSpin(isFreeSpin) {
   const contract = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
 
   try {
+    // Debug: check contract status eerst
+    try {
+      const rpc = new ethers.JsonRpcProvider(CONFIG.LUKSO_RPC);
+      const debugContract = new ethers.Contract(CONFIG.FAIR_CONTRACT, [
+        "function spinToken() external view returns (address)",
+        "function nftContract() external view returns (address)",
+        "function paused() external view returns (bool)",
+      ], rpc);
+      const spin = await debugContract.spinToken();
+      const nft  = await debugContract.nftContract();
+      const paused = await debugContract.paused();
+      console.log('DEBUG spinToken:', spin);
+      console.log('DEBUG nftContract:', nft);
+      console.log('DEBUG paused:', paused);
+      showMsg(`Debug: spin=${spin.slice(0,8)} nft=${nft.slice(0,8)} paused=${paused}`, 'info');
+      await new Promise(r => setTimeout(r, 3000));
+    } catch(e) {
+      console.error('Debug error:', e);
+      showMsg('Debug error: ' + e.message, 'warn');
+      state.spinning = false;
+      return;
+    }
+
     // Stap 1: Commit
     showMsg(t('commit'), 'info');
     showTxOverlay(t('commit'), '1/2');
