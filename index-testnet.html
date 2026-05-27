@@ -828,16 +828,16 @@ const CONFIG = {
 //  SYMBOLEN (10 stuks, id moet overeenkomen met contract)
 // ─────────────────────────────────────────────────────────────
 const SYMBOLS = [
-  { id:0, key:'LUKSO',     emoji:'🔵', label:'LUKSO' },
-  { id:1, key:'UP',        emoji:'🆙', label:'UP' },
-  { id:2, key:'PHLAMEY',   emoji:'🔥', label:'Phlamey' },
-  { id:3, key:'LUKSAGENT', emoji:'🐰', label:'LuksAgent' },
-  { id:4, key:'ELYX',      emoji:'🐘', label:'Elyx' },
-  { id:5, key:'EMMET',     emoji:'🐙', label:'Emmet' },
-  { id:6, key:'SLYX',      emoji:'💎', label:'sLYX' },
-  { id:7, key:'BILLS',     emoji:'💵', label:'Bills' },
-  { id:8, key:'COINS',     emoji:'🪙', label:'Coins' },
-  { id:9, key:'FREESPIN',  emoji:'🎟️', label:'FreeSpin' },
+  { id:0, key:'LUKSO',     emoji:'🔵', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/1_lukso_logo.png',     label:'LUKSO' },
+  { id:1, key:'UP',        emoji:'🆙', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/2_up_logo.png',         label:'UP' },
+  { id:2, key:'PHLAMEY',   emoji:'🔥', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/3_phlamey.png',         label:'Phlamey' },
+  { id:3, key:'LUKSAGENT', emoji:'🐰', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/4_agent_rabbit.png',    label:'LuksAgent' },
+  { id:4, key:'ELYX',      emoji:'🐘', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/5_elyx_elephant.png',   label:'Elyx' },
+  { id:5, key:'EMMET',     emoji:'🐙', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/6_emmet_octopus.png',   label:'Emmet' },
+  { id:6, key:'SLYX',      emoji:'💎', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/8_slyx_logo.png',       label:'sLYX' },
+  { id:7, key:'BILLS',     emoji:'💵', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/7_slyx_bills.png',      label:'Bills' },
+  { id:8, key:'COINS',     emoji:'🪙', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/9_coin_stack.png',      label:'Coins' },
+  { id:9, key:'FREESPIN',  emoji:'🎟️', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/10_free_spins.png',    label:'FreeSpin' },
 ];
 
 // SPIN gewichten (moeten overeenkomen met contract _pickSymbol)
@@ -1031,7 +1031,15 @@ function makeSymbolEl(sym) {
   const div = document.createElement('div');
   div.className = 'reel-symbol';
   div.dataset.id = sym.id;
-  div.textContent = sym.emoji;
+  if (sym.img) {
+    const img = document.createElement('img');
+    img.src = sym.img;
+    img.alt = sym.label;
+    img.draggable = false;
+    div.appendChild(img);
+  } else {
+    div.textContent = sym.emoji;
+  }
   return div;
 }
 
