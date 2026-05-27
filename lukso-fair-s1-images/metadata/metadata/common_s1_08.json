@@ -1,0 +1,68 @@
+{
+  "LSP4Metadata": {
+    "name": "LUKSO Fair \u2014 Common #08",
+    "description": "A common collectible from the LUKSO Fair Season 1 carnival series.",
+    "links": [
+      {
+        "title": "LUKSO Fair",
+        "url": "https://profile.link/lukso-fair@fBC4"
+      }
+    ],
+    "icon": [
+      {
+        "width": 256,
+        "height": 256,
+        "url": "ipfs://bafybeicr5g7jexfkaetxisu5paoqc2luiooi37rf7gybs6bja7hiofm354/common_s1_08.png",
+        "verification": {
+          "method": "keccak256(bytes)",
+          "data": "0x"
+        }
+      }
+    ],
+    "images": [
+      [
+        {
+          "width": 1000,
+          "height": 1000,
+          "url": "ipfs://bafybeicr5g7jexfkaetxisu5paoqc2luiooi37rf7gybs6bja7hiofm354/common_s1_08.png",
+          "verification": {
+            "method": "keccak256(bytes)",
+            "data": "0x"
+          }
+        }
+      ]
+    ],
+    "attributes": [
+      {
+        "key": "Collection",
+        "value": "LUKSO Fair Prizes Season 1",
+        "type": "string"
+      },
+      {
+        "key": "Season",
+        "value": "Season 1",
+        "type": "string"
+      },
+      {
+        "key": "Tier",
+        "value": "Common",
+        "type": "string"
+      },
+      {
+        "key": "Edition Total",
+        "value": 25,
+        "type": "number"
+      },
+      {
+        "key": "Token ID",
+        "value": 23,
+        "type": "number"
+      },
+      {
+        "key": "Creator",
+        "value": "0xfBC4ba2bBC9213595fd455A1d49a42CAeDFD0123",
+        "type": "string"
+      }
+    ]
+  }
+}

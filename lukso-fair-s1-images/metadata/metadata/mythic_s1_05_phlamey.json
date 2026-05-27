@@ -1,0 +1,68 @@
+{
+  "LSP4Metadata": {
+    "name": "LUKSO Fair \u2014 Phlamey #1",
+    "description": "Phlamey, the flame spirit of LUKSO Fair. A mythic 1/1 collectible from Season 1.",
+    "links": [
+      {
+        "title": "LUKSO Fair",
+        "url": "https://profile.link/lukso-fair@fBC4"
+      }
+    ],
+    "icon": [
+      {
+        "width": 256,
+        "height": 256,
+        "url": "ipfs://bafybeicr5g7jexfkaetxisu5paoqc2luiooi37rf7gybs6bja7hiofm354/mythic_s1_05_phlamey.png",
+        "verification": {
+          "method": "keccak256(bytes)",
+          "data": "0x"
+        }
+      }
+    ],
+    "images": [
+      [
+        {
+          "width": 1000,
+          "height": 1000,
+          "url": "ipfs://bafybeicr5g7jexfkaetxisu5paoqc2luiooi37rf7gybs6bja7hiofm354/mythic_s1_05_phlamey.png",
+          "verification": {
+            "method": "keccak256(bytes)",
+            "data": "0x"
+          }
+        }
+      ]
+    ],
+    "attributes": [
+      {
+        "key": "Collection",
+        "value": "LUKSO Fair Prizes Season 1",
+        "type": "string"
+      },
+      {
+        "key": "Season",
+        "value": "Season 1",
+        "type": "string"
+      },
+      {
+        "key": "Tier",
+        "value": "Mythic",
+        "type": "string"
+      },
+      {
+        "key": "Edition Total",
+        "value": 1,
+        "type": "number"
+      },
+      {
+        "key": "Token ID",
+        "value": 5,
+        "type": "number"
+      },
+      {
+        "key": "Creator",
+        "value": "0xfBC4ba2bBC9213595fd455A1d49a42CAeDFD0123",
+        "type": "string"
+      }
+    ]
+  }
+}

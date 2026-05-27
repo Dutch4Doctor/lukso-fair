@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LUKSO Slots — LUKSO Fair</title>
+  <meta name="description" content="Play LUKSO Slots on the LUKSO Fair blockchain carnival. Win unique NFTs, tokens and LYX!">
+  <meta name="theme-color" content="#1a0035">
+  <!-- ethers.js v6 via jsdelivr (betrouwbaar) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════
+   CSS VARIABELEN & RESET
+═══════════════════════════════════════════════ */
+:root {
+  --purple:       #bf5af2;
+  --purple-dark:  #7b2fbe;
+  --purple-glow:  rgba(191,90,242,0.4);
+  --gold:         #ffd700;
+  --gold-glow:    rgba(255,215,0,0.5);
+  --bg:           #0a0014;
+  --panel:        rgba(25,5,55,0.92);
+  --panel-border: rgba(191,90,242,0.3);
+  --text:         #f0e6ff;
+  --text-muted:   #9080aa;
+  --success:      #34d399;
+  --warn:         #fbbf24;
+  --danger:       #f87171;
+  --reel-bg:      #12002a;
+  --reel-border:  rgba(255,215,0,0.6);
+  --slot-width:   min(90vw, 420px);
+  --reel-size:    min(22vw, 100px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ═══════════════════════════════════════════════
+   ACHTERGROND STERREN
+═══════════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(120,40,200,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(80,20,160,0.12) 0%, transparent 50%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   HEADER — MOBIEL VRIENDELIJK
+═══════════════════════════════════════════════ */
+.header {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(10,0,20,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--panel-border);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 56px;
+}
+
+.header-left {
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+}
+
+.header-logo {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  background: linear-gradient(90deg, var(--gold), var(--purple));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-right {
+  display: flex; align-items: center; gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Taalknop */
+.lang-toggle {
+  display: flex;
+  background: rgba(30,10,60,0.9);
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.lang-btn {
+  background: none; border: none;
+  padding: 4px 8px;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer; color: var(--text-muted);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.lang-btn.active {
+  background: var(--purple);
+  color: white;
+}
+
+/* Connect knop & profiel */
+#connectBtn {
+  background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+  border: none; border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px; font-weight: 700;
+  color: white; cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 12px var(--purple-glow);
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+#connectBtn:hover { filter: brightness(1.15); }
+#connectBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Profiel weergave na connect */
+.profile-display {
+  display: none;
+  align-items: center; gap: 8px;
+  background: rgba(30,10,60,0.9);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 4px 10px 4px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.profile-display:hover { border-color: var(--purple); }
+.profile-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--purple);
+  object-fit: cover;
+  background: var(--reel-bg);
+  flex-shrink: 0;
+}
+.profile-avatar.placeholder {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+.profile-info {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.profile-name {
+  font-size: 12px; font-weight: 700; color: var(--text);
+  max-width: 80px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.profile-balance {
+  font-size: 11px; color: var(--gold);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════
+   RECOVERY BANNER
+═══════════════════════════════════════════════ */
+.recovery-banner {
+  display: none;
+  position: fixed; top: 56px; left: 0; right: 0; z-index: 90;
+  background: linear-gradient(90deg, rgba(251,191,36,0.15), rgba(251,191,36,0.08));
+  border-bottom: 1px solid rgba(251,191,36,0.4);
+  padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.recovery-banner.hidden { display: none !important; }
+.recovery-text { font-size: 13px; color: var(--warn); }
+#recoveryBtn {
+  background: var(--warn); color: #000;
+  border: none; border-radius: 12px;
+  padding: 5px 12px; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════════ */
+.main {
+  position: relative; z-index: 1;
+  padding-top: 70px;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding-bottom: 40px;
+}
+
+/* ═══════════════════════════════════════════════
+   KERMIS LICHTJES
+═══════════════════════════════════════════════ */
+.lights {
+  display: flex; gap: 6px;
+  padding: 8px 0 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.light {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  animation: blink 1.5s ease-in-out infinite;
+}
+.light:nth-child(even) { animation-delay: 0.75s; }
+@keyframes blink {
+  0%,100% { opacity: 1; box-shadow: 0 0 6px currentColor; }
+  50%      { opacity: 0.3; box-shadow: none; }
+}
+.light.gold   { background: var(--gold);    color: var(--gold); }
+.light.purple { background: var(--purple);  color: var(--purple); }
+.light.white  { background: #fff;           color: #fff; }
+
+/* ═══════════════════════════════════════════════
+   MACHINE FRAME
+═══════════════════════════════════════════════ */
+.machine {
+  width: var(--slot-width);
+  background: linear-gradient(180deg, #1e0042 0%, #12002a 100%);
+  border: 2px solid rgba(191,90,242,0.5);
+  border-radius: 24px;
+  box-shadow:
+    0 0 40px rgba(191,90,242,0.2),
+    0 0 80px rgba(191,90,242,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.machine-header {
+  background: linear-gradient(135deg, #2a0060, #1a003a);
+  padding: 12px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--panel-border);
+}
+.machine-title {
+  font-size: clamp(22px, 7vw, 34px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, var(--gold), #fff, var(--gold));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+.machine-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* Jackpot display */
+.jackpot-display {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--gold-glow);
+  border-radius: 8px;
+  margin: 8px 12px;
+  padding: 6px 12px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  animation: flicker 4s ease-in-out infinite;
+}
+@keyframes flicker {
+  0%,95%,100% { opacity: 1; }
+  96%,99%     { opacity: 0.6; }
+}
+
+/* ═══════════════════════════════════════════════
+   ROLLEN GEBIED
+═══════════════════════════════════════════════ */
+.reels-outer {
+  margin: 8px 12px;
+  background: rgba(0,0,0,0.5);
+  border: 2px solid rgba(255,215,0,0.4);
+  border-radius: 14px;
+  padding: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Win highlight */
+.reels-outer.winning {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px var(--gold-glow), inset 0 0 20px rgba(255,215,0,0.1);
+  animation: winBorder 0.5s ease-in-out 3;
+}
+@keyframes winBorder {
+  0%,100% { box-shadow: 0 0 20px var(--gold-glow); }
+  50%     { box-shadow: 0 0 40px var(--gold-glow), 0 0 60px rgba(255,215,0,0.3); }
+}
+
+.reels-row {
+  display: flex; gap: 8px; justify-content: center;
+}
+
+.reel-wrapper {
+  width: var(--reel-size);
+  height: var(--reel-size);
+  border-radius: 10px;
+  background: var(--reel-bg);
+  border: 2px solid var(--reel-border);
+  overflow: hidden;
+  position: relative;
+}
+
+.reel-strip {
+  display: flex;
+  flex-direction: column;
+  transition: none;
+  will-change: transform;
+}
+
+.reel-symbol {
+  width: var(--reel-size);
+  height: var(--reel-size);
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(var(--reel-size) * 0.5);
+  flex-shrink: 0;
+  user-select: none;
+}
+.reel-symbol img {
+  width: 75%; height: 75%;
+  object-fit: contain;
+}
+
+/* Glow bij winlijn */
+.win-line {
+  position: absolute; left: 0; right: 0;
+  top: 50%; transform: translateY(-50%);
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.reels-outer.winning .win-line { opacity: 1; }
+
+/* ═══════════════════════════════════════════════
+   BERICHT BALK
+═══════════════════════════════════════════════ */
+.message-bar {
+  margin: 6px 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: clamp(12px, 3.5vw, 14px);
+  font-weight: 600;
+  min-height: 36px;
+  transition: all 0.3s;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+}
+.message-bar.win   { background: rgba(52,211,153,0.15); border-color: var(--success); color: var(--success); }
+.message-bar.info  { background: rgba(191,90,242,0.15); border-color: var(--purple);  color: var(--purple); }
+.message-bar.warn  { background: rgba(251,191,36,0.15); border-color: var(--warn);    color: var(--warn); }
+
+/* ═══════════════════════════════════════════════
+   KNOPPEN GEBIED
+═══════════════════════════════════════════════ */
+.controls {
+  margin: 6px 12px;
+  display: flex; gap: 8px;
+  flex-direction: column;
+}
+
+.spin-row {
+  display: flex; gap: 8px;
+}
+
+.btn-spin {
+  flex: 1;
+  padding: 14px 8px;
+  border: none; border-radius: 12px;
+  font-size: clamp(14px, 4vw, 16px);
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-spin::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.1s;
+}
+.btn-spin:active::after { background: rgba(255,255,255,0.1); }
+
+.btn-spin-main {
+  background: linear-gradient(135deg, #9b1fe8, #bf5af2, #d97af7);
+  color: white;
+  box-shadow: 0 4px 20px rgba(191,90,242,0.5);
+  letter-spacing: 1px;
+}
+.btn-spin-main:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(191,90,242,0.7);
+}
+.btn-spin-main:disabled {
+  background: #3a2a4a;
+  color: #6a5a7a;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-spin-free {
+  background: linear-gradient(135deg, #1a6040, #22c55e, #34d399);
+  color: white;
+  box-shadow: 0 4px 16px rgba(34,197,94,0.4);
+  min-width: 80px;
+  flex: 0 0 auto;
+}
+.btn-spin-free:disabled {
+  background: #1a2a20;
+  color: #4a6a50;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.free-count {
+  font-size: 10px;
+  opacity: 0.85;
+  display: block;
+}
+
+/* Collect knop */
+.btn-collect {
+  width: 100%;
+  padding: 12px;
+  border: none; border-radius: 12px;
+  background: linear-gradient(135deg, #b45309, #d97706, #fbbf24);
+  color: #000;
+  font-size: 14px; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(251,191,36,0.4);
+  transition: all 0.2s;
+  display: none;
+}
+.btn-collect:hover { filter: brightness(1.1); }
+.btn-collect.visible { display: block; }
+
+/* Tweet knop */
+.btn-tweet {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #1da1f2;
+  border-radius: 10px;
+  background: rgba(29,161,242,0.1);
+  color: #1da1f2;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: none;
+}
+.btn-tweet:hover { background: rgba(29,161,242,0.2); }
+.btn-tweet.visible { display: block; }
+
+/* ═══════════════════════════════════════════════
+   SESSIE STATISTIEKEN
+═══════════════════════════════════════════════ */
+.session-stats {
+  margin: 6px 12px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  font-size: 12px;
+}
+.stats-title {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.stat-item {
+  display: flex; align-items: center; gap: 6px;
+}
+.stat-icon { font-size: 14px; }
+.stat-info { flex: 1; }
+.stat-label { color: var(--text-muted); font-size: 10px; }
+.stat-value { color: var(--text); font-weight: 700; font-size: 13px; }
+
+/* ═══════════════════════════════════════════════
+   SESSIE LIMIET
+═══════════════════════════════════════════════ */
+.session-limit-bar {
+  margin: 6px 12px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+}
+.limit-label { font-size: 11px; color: var(--text-muted); }
+.limit-input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 4px 8px;
+  font-size: 12px;
+  width: 70px;
+}
+.limit-input:focus { outline: none; border-color: var(--purple); }
+.limit-progress {
+  flex: 1; min-width: 80px;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.limit-fill {
+  height: 100%;
+  background: var(--purple);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.limit-fill.warn { background: var(--warn); }
+.limit-fill.danger { background: var(--danger); }
+
+/* ═══════════════════════════════════════════════
+   UITBETAALTABEL
+═══════════════════════════════════════════════ */
+details.payout-section {
+  margin: 8px 12px 12px;
+}
+details.payout-section summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  list-style: none;
+  display: flex; align-items: center; justify-content: space-between;
+  user-select: none;
+}
+details.payout-section summary::-webkit-details-marker { display: none; }
+details.payout-section summary::after { content: '▼'; font-size: 10px; }
+details.payout-section[open] summary::after { content: '▲'; }
+.payout-table {
+  margin-top: 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 11px;
+}
+.payout-row {
+  display: flex; align-items: center;
+  padding: 7px 10px; gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.payout-row:last-child { border-bottom: none; }
+.payout-row:nth-child(even) { background: rgba(255,255,255,0.02); }
+.payout-combo { flex: 1; color: var(--text-muted); font-size: 14px; }
+.payout-prize { flex: 2; color: var(--text); }
+.payout-chance { flex: 0 0 50px; text-align: right; color: var(--purple); font-weight: 700; }
+
+/* ═══════════════════════════════════════════════
+   TX OVERLAY
+═══════════════════════════════════════════════ */
+.tx-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(5,0,15,0.85);
+  backdrop-filter: blur(8px);
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px;
+}
+.tx-overlay.visible { display: flex; }
+.tx-spinner {
+  width: 48px; height: 48px;
+  border: 3px solid rgba(191,90,242,0.3);
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.tx-message { font-size: 16px; color: var(--text); text-align: center; }
+.tx-step { font-size: 12px; color: var(--text-muted); text-align: center; }
+
+/* ═══════════════════════════════════════════════
+   CONFETTI
+═══════════════════════════════════════════════ */
+.confetti-piece {
+  position: fixed;
+  width: 8px; height: 8px;
+  top: -10px;
+  animation: confettiFall var(--dur, 3s) ease-in var(--delay, 0s) forwards;
+  border-radius: 2px;
+  z-index: 300; pointer-events: none;
+}
+@keyframes confettiFall {
+  0%   { transform: translate(0,0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--dx,20px), 100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════
+   DEMO MODE BADGE
+═══════════════════════════════════════════════ */
+.demo-badge {
+  display: inline-flex;
+  align-items: center; gap: 4px;
+  background: rgba(251,191,36,0.15);
+  border: 1px solid rgba(251,191,36,0.4);
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--warn);
+  letter-spacing: 1px;
+}
+
+@media (max-width: 380px) {
+  :root { --reel-size: min(26vw, 90px); }
+  .header-logo { font-size: 16px; }
+  .profile-name { max-width: 60px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <span class="header-logo">🎰 LUKSO Slots</span>
+    <span id="demoBadge" class="demo-badge">DEMO</span>
+  </div>
+  <div class="header-right">
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('en')" id="langEN">EN</button>
+      <button class="lang-btn"        onclick="setLang('nl')" id="langNL">NL</button>
+    </div>
+    <!-- Getoond vóór connect -->
+    <button id="connectBtn" onclick="connectWallet()">
+      <span>🆙</span><span data-i18n="connect">Connect</span>
+    </button>
+    <!-- Getoond ná connect -->
+    <div class="profile-display" id="profileDisplay" onclick="disconnectWallet()">
+      <img class="profile-avatar" id="profileAvatar" src="" alt="" onerror="this.style.display='none'; document.getElementById('profileAvatarFallback').style.display='flex'">
+      <div class="profile-avatar placeholder" id="profileAvatarFallback" style="display:none">👤</div>
+      <div class="profile-info">
+        <span class="profile-name" id="profileName">—</span>
+        <span class="profile-balance" id="profileBalance">— LYX</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SPEELTEGOED RECOVERY BANNER -->
+<div class="recovery-banner hidden" id="recoveryBanner">
+  <span class="recovery-text" id="recoveryText">⚠️ Unspent balance found</span>
+  <button id="recoveryBtn" onclick="recoverBalance()" data-i18n="recover">Recover</button>
+</div>
+
+<!-- MAIN -->
+<main class="main" id="mainContent">
+  <!-- Lichtjes -->
+  <div class="lights" id="lights"></div>
+
+  <!-- Machine -->
+  <div class="machine">
+
+    <!-- Titel -->
+    <div class="machine-header">
+      <div class="machine-title">LUKSO SLOTS</div>
+      <div class="machine-subtitle" data-i18n="subtitle">LUKSO Fair Blockchain Carnival</div>
+    </div>
+
+    <!-- Jackpot display -->
+    <div class="jackpot-display" id="jackpotDisplay">
+      🏆 JACKPOT — <span id="jackpotAmount">Mythic NFT</span>
+    </div>
+
+    <!-- Rollen -->
+    <div class="reels-outer" id="reelsOuter">
+      <div class="reels-row">
+        <div class="reel-wrapper"><div class="reel-strip" id="reel0"></div></div>
+        <div class="reel-wrapper"><div class="reel-strip" id="reel1"></div></div>
+        <div class="reel-wrapper"><div class="reel-strip" id="reel2"></div></div>
+      </div>
+      <div class="win-line"></div>
+    </div>
+
+    <!-- Bericht -->
+    <div class="message-bar" id="msgBar" data-i18n="connect_to_play">Connect your UP to play!</div>
+
+    <!-- Knoppen -->
+    <div class="controls">
+      <div class="spin-row">
+        <button class="btn-spin btn-spin-main" id="spinBtn" onclick="doSpin(false)" disabled>
+          <span data-i18n="spin">SPIN — 0.1 LYX</span>
+        </button>
+        <button class="btn-spin btn-spin-free" id="freeSpinBtn" onclick="doSpin(true)" disabled>
+          🎟️<span class="free-count" id="freeCount">0</span>
+        </button>
+      </div>
+      <button class="btn-collect" id="collectBtn" onclick="collectWinnings()">
+        💰 <span data-i18n="collect">Collect Winnings</span>
+      </button>
+      <button class="btn-tweet" id="tweetBtn" onclick="shareOnX()">
+        𝕏 <span data-i18n="share">Share on X</span>
+      </button>
+    </div>
+
+    <!-- Sessie statistieken -->
+    <div class="session-stats">
+      <div class="stats-title" data-i18n="session">Session</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <span class="stat-icon">🎰</span>
+          <div class="stat-info">
+            <div class="stat-label" data-i18n="spins">Spins</div>
+            <div class="stat-value" id="statSpins">0</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🏆</span>
+          <div class="stat-info">
+            <div class="stat-label" data-i18n="wins">Wins</div>
+            <div class="stat-value" id="statWins">0</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">💎</span>
+          <div class="stat-info">
+            <div class="stat-label">sLYX</div>
+            <div class="stat-value" id="statSLYX">0</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🔥</span>
+          <div class="stat-info">
+            <div class="stat-label">PHLAME</div>
+            <div class="stat-value" id="statPHLAME">0</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🤖</span>
+          <div class="stat-info">
+            <div class="stat-label">AGENTPO</div>
+            <div class="stat-value" id="statAGENTPO">0</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🖼️</span>
+          <div class="stat-info">
+            <div class="stat-label">NFTs</div>
+            <div class="stat-value" id="statNFTs">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessie limiet -->
+    <div class="session-limit-bar">
+      <span class="limit-label" data-i18n="limit">Limit:</span>
+      <input class="limit-input" id="limitInput" type="number" min="0.1" step="0.1" placeholder="LYX" onchange="updateLimit()">
+      <div class="limit-progress"><div class="limit-fill" id="limitFill" style="width:0%"></div></div>
+      <span style="font-size:11px; color:var(--text-muted)" id="limitText">—</span>
+    </div>
+
+    <!-- Uitbetaaltabel -->
+    <details class="payout-section">
+      <summary data-i18n="payout_title">Payout Table ▼</summary>
+      <div class="payout-table" id="payoutTable"></div>
+    </details>
+
+  </div><!-- .machine -->
+</main>
+
+<!-- TX OVERLAY -->
+<div class="tx-overlay" id="txOverlay">
+  <div class="tx-spinner"></div>
+  <div class="tx-message" id="txMessage">Processing…</div>
+  <div class="tx-step" id="txStep"></div>
+</div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║               LUKSO Slots — Frontend v2.0                   ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+// ─────────────────────────────────────────────────────────────
+//  CONFIGURATIE
+// ─────────────────────────────────────────────────────────────
+const CONFIG = {
+  // ── Zet op false om echte transacties te sturen ──
+  DEMO_MODE:    true,
+
+  // ── Contract adressen (mainnet) ──────────────────
+  // Testnet: vervang deze door testnet adressen in index-testnet.html
+  SPIN_TOKEN:   '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
+  NFT_CONTRACT: '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
+  FAIR_CONTRACT:'0x75227Dc417427830aCF3250f949AbD1a8253fA21',
+
+  PLATFORM_URL: 'https://profile.link/lukso-fair@fBC4',
+  LUKSO_RPC:    'https://rpc.mainnet.lukso.network',
+  CHAIN_ID:     42,
+
+  // ── IPFS ─────────────────────────────────────────
+  IMAGES_CID:   'bafybeicr5g7jexfkaetxisu5paoqc2luiooi37rf7gybs6bja7hiofm354',
+};
+
+// ─────────────────────────────────────────────────────────────
+//  SYMBOLEN (10 stuks, id moet overeenkomen met contract)
+// ─────────────────────────────────────────────────────────────
+const SYMBOLS = [
+  { id:0, key:'LUKSO',     emoji:'🔵', label:'LUKSO' },
+  { id:1, key:'UP',        emoji:'🆙', label:'UP' },
+  { id:2, key:'PHLAMEY',   emoji:'🔥', label:'Phlamey' },
+  { id:3, key:'LUKSAGENT', emoji:'🐰', label:'LuksAgent' },
+  { id:4, key:'ELYX',      emoji:'🐘', label:'Elyx' },
+  { id:5, key:'EMMET',     emoji:'🐙', label:'Emmet' },
+  { id:6, key:'SLYX',      emoji:'💎', label:'sLYX' },
+  { id:7, key:'BILLS',     emoji:'💵', label:'Bills' },
+  { id:8, key:'COINS',     emoji:'🪙', label:'Coins' },
+  { id:9, key:'FREESPIN',  emoji:'🎟️', label:'FreeSpin' },
+];
+
+// SPIN gewichten (moeten overeenkomen met contract _pickSymbol)
+const WEIGHTS = [2,3,4,5,6,7,9,12,14,38];
+
+// ─────────────────────────────────────────────────────────────
+//  VERTALINGEN
+// ─────────────────────────────────────────────────────────────
+const I18N = {
+  en: {
+    connect:        'Connect',
+    connect_to_play:'Connect your UP to play!',
+    subtitle:       'LUKSO Fair Blockchain Carnival',
+    spin:           'SPIN — 0.1 LYX',
+    collect:        'Collect Winnings',
+    share:          'Share on X',
+    session:        'Session',
+    spins:          'Spins',
+    wins:           'Wins',
+    limit:          'Limit:',
+    payout_title:   'Payout Table',
+    spinning:       'Spinning…',
+    commit:         'Placing commit…',
+    reveal:         'Revealing result…',
+    recover:        'Recover',
+    recovery_msg:   (amt) => `⚠️ Unspent balance found: ${amt} LYX — Click to recover`,
+    win_jackpot:    '🏆 JACKPOT! Mythic NFT won!',
+    win_rare:       '💜 Rare NFT won!',
+    win_uncommon:   '🌟 Uncommon NFT won!',
+    win_common:     '🖼️ Common NFT won!',
+    win_phlame:     '🔥 PHLAME tokens won!',
+    win_agentpo:    '🤖 AGENTPO tokens won!',
+    win_slyx:       '💎 sLYX tokens won!',
+    win_lyxlarge:   '💰 Big LYX win!',
+    win_lyxsmall:   '💵 LYX won!',
+    win_free5:      '🎟️ 5 Free Spins won!',
+    win_free3:      '🎟️ 3 Free Spins won!',
+    win_consolation:'🎟️ Consolation: 1 Free Spin!',
+    no_win:         'No win this time. Try again!',
+    demo_spin:      '🎮 Demo spin — connect UP for real prizes',
+    tweet_won:      (prize) => `🎰 I just won ${prize} on LUKSO Fair!\n\n🎡 Play at: ${CONFIG.PLATFORM_URL}\n#LUKSO #LUKSOFair #LUKSOSlots #Web3 #UniversalProfile`,
+    disconnect:     'Tap to disconnect',
+  },
+  nl: {
+    connect:        'Verbinden',
+    connect_to_play:'Verbind je UP om te spelen!',
+    subtitle:       'LUKSO Fair Blockchain Kermis',
+    spin:           'SPIN — 0,1 LYX',
+    collect:        'Winsten Innen',
+    share:          'Delen op X',
+    session:        'Sessie',
+    spins:          'Spins',
+    wins:           'Gewonnen',
+    limit:          'Limiet:',
+    payout_title:   'Uitbetalingstabel',
+    spinning:       'Draaien…',
+    commit:         'Commit plaatsen…',
+    reveal:         'Resultaat ophalen…',
+    recover:        'Terugvorderen',
+    recovery_msg:   (amt) => `⚠️ Ongebruikt tegoed gevonden: ${amt} LYX — Klik om terug te vorderen`,
+    win_jackpot:    '🏆 JACKPOT! Mythic NFT gewonnen!',
+    win_rare:       '💜 Rare NFT gewonnen!',
+    win_uncommon:   '🌟 Uncommon NFT gewonnen!',
+    win_common:     '🖼️ Common NFT gewonnen!',
+    win_phlame:     '🔥 PHLAME tokens gewonnen!',
+    win_agentpo:    '🤖 AGENTPO tokens gewonnen!',
+    win_slyx:       '💎 sLYX tokens gewonnen!',
+    win_lyxlarge:   '💰 Grote LYX prijs!',
+    win_lyxsmall:   '💵 LYX gewonnen!',
+    win_free5:      '🎟️ 5 Gratis Spins gewonnen!',
+    win_free3:      '🎟️ 3 Gratis Spins gewonnen!',
+    win_consolation:'🎟️ Troostprijs: 1 Gratis Spin!',
+    no_win:         'Niet gewonnen. Probeer opnieuw!',
+    demo_spin:      '🎮 Demo spin — verbind UP voor echte prijzen',
+    tweet_won:      (prize) => `🎰 Ik heb zojuist ${prize} gewonnen op LUKSO Fair!\n\n🎡 Speel op: ${CONFIG.PLATFORM_URL}\n#LUKSO #LUKSOFair #LUKSOSlots #Web3 #UniversalProfile`,
+    disconnect:     'Tik om te verbreken',
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+//  CONTRACT ABI (minimaal)
+// ─────────────────────────────────────────────────────────────
+const FAIR_ABI = [
+  "function commitSpin(bytes32 commitHash) external payable",
+  "function revealSpin(uint256 secret) external",
+  "function getPlayerInfo(address player) external view returns (uint256,uint256,uint256,uint256,bool,uint256)",
+  "function claimPendingBalance() external",
+  "function refundExpiredCommit() external",
+  "event SpinRevealed(address indexed player, uint8 r1, uint8 r2, uint8 r3, uint8 prizeType, bool isFreeSpin)"
+];
+
+// ─────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────
+const state = {
+  lang:           'en',
+  connected:      false,
+  address:        null,
+  balance:        0,
+  freeSpins:      0,
+  pendingBalance: 0,
+  spinning:       false,
+  // Sessie statistieken
+  sessionSpins:   0,
+  sessionWins:    0,
+  sessionSLYX:    0,
+  sessionPHLAME:  0,
+  sessionAGENTPO: 0,
+  sessionNFTs:    0,
+  // Sessie limiet
+  sessionLimit:   0,
+  sessionSpent:   0,
+  // Laatste win (voor tweet)
+  lastWin:        null,
+  // UP profiel
+  profileName:    null,
+  profileAvatar:  null,
+};
+
+// ─────────────────────────────────────────────────────────────
+//  INITIALISATIE
+// ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildLights();
+  buildReels();
+  buildPayoutTable();
+  applyLang('en');
+
+  // Demo badge tonen/verbergen
+  document.getElementById('demoBadge').style.display = CONFIG.DEMO_MODE ? 'inline-flex' : 'none';
+});
+
+function t(key, arg) {
+  const d = I18N[state.lang] || I18N.en;
+  const v = d[key] || I18N.en[key] || key;
+  return typeof v === 'function' ? v(arg) : v;
+}
+
+function setLang(lang) {
+  state.lang = lang;
+  document.getElementById('langEN').classList.toggle('active', lang === 'en');
+  document.getElementById('langNL').classList.toggle('active', lang === 'nl');
+  applyLang(lang);
+}
+
+function applyLang(lang) {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = t(key);
+    if (typeof val === 'string') el.textContent = val;
+  });
+  buildPayoutTable();
+}
+
+// ─────────────────────────────────────────────────────────────
+//  KERMIS LICHTJES
+// ─────────────────────────────────────────────────────────────
+function buildLights() {
+  const colors = ['gold','purple','white','gold','purple','white','gold'];
+  const container = document.getElementById('lights');
+  container.innerHTML = '';
+  for (let i = 0; i < 28; i++) {
+    const d = document.createElement('div');
+    d.className = 'light ' + colors[i % colors.length];
+    container.appendChild(d);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ROLLEN OPBOUWEN
+// ─────────────────────────────────────────────────────────────
+function buildReels() {
+  // Bouw een gewogen symbool-pool voor willekeurige keuzes
+  const pool = [];
+  SYMBOLS.forEach((s, i) => {
+    for (let w = 0; w < WEIGHTS[i]; w++) pool.push(s);
+  });
+
+  for (let r = 0; r < 3; r++) {
+    const strip = document.getElementById(`reel${r}`);
+    strip.innerHTML = '';
+    // Genereer een lange strip van symbolen
+    for (let i = 0; i < 24; i++) {
+      const sym = pool[Math.floor(Math.random() * pool.length)];
+      strip.appendChild(makeSymbolEl(sym));
+    }
+  }
+}
+
+function makeSymbolEl(sym) {
+  const div = document.createElement('div');
+  div.className = 'reel-symbol';
+  div.dataset.id = sym.id;
+  div.textContent = sym.emoji;
+  return div;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ANIMATIE — SMOOTH & SNEL
+// ─────────────────────────────────────────────────────────────
+async function animateReels(finalSymbols) {
+  // Rollen draaien onmiddellijk — uitkomst wordt aan het einde vastgezet
+  const promises = finalSymbols.map((sym, r) => animateReel(r, sym));
+  await Promise.all(promises);
+}
+
+function animateReel(reelIdx, finalSym) {
+  return new Promise(resolve => {
+    const strip   = document.getElementById(`reel${reelIdx}`);
+    const size    = strip.parentElement.offsetHeight || 90;
+
+    // Startpositie
+    let pos = 0;
+    const totalItems = strip.children.length;
+
+    // Voeg een paar extra symbolen toe aan het einde met het finale symbool
+    // zodat de animatie netjes stopt
+    const extraItems = 8 + reelIdx * 3; // Elke rol stopt iets later
+    for (let i = 0; i < extraItems - 1; i++) {
+      const pool = SYMBOLS;
+      const rnd  = pool[Math.floor(Math.random() * pool.length)];
+      strip.appendChild(makeSymbolEl(rnd));
+    }
+    // Laatste item = finale symbool
+    strip.appendChild(makeSymbolEl(finalSym));
+
+    // Animeer via requestAnimationFrame — geen CSS transition delays
+    const totalHeight = (strip.children.length - 1) * size;
+    const targetY     = totalHeight - size;
+    const duration    = 800 + reelIdx * 200; // ms
+    const startTime   = performance.now();
+
+    // Easing: ease-out cubic
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function frame(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const easedProgress = easeOut(progress);
+      const y = -easedProgress * targetY;
+
+      strip.style.transform = `translateY(${y}px)`;
+
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        strip.style.transform = `translateY(${-targetY}px)`;
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(frame);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+//  WALLET VERBINDEN
+// ─────────────────────────────────────────────────────────────
+async function connectWallet() {
+  const provider = window.lukso || window.ethereum;
+  if (!provider) {
+    showMsg(t('connect_to_play'), 'warn');
+    window.open('https://chromewebstore.google.com/detail/universal-profiles/abpickdkkbnbcoepogfhkhennhfhehfn', '_blank');
+    return;
+  }
+
+  try {
+    document.getElementById('connectBtn').disabled = true;
+
+    const accounts = await provider.request({ method: 'eth_requestAccounts' });
+    if (!accounts.length) return;
+
+    state.address   = accounts[0];
+    state.connected = true;
+
+    // Saldo ophalen
+    const balHex = await provider.request({
+      method: 'eth_getBalance', params: [state.address, 'latest']
+    });
+    state.balance = parseFloat((parseInt(balHex, 16) / 1e18).toFixed(3));
+
+    // UP profiel ophalen
+    fetchUPProfile(state.address);
+
+    // Contract data ophalen (freeSpins + pendingBalance)
+    if (!CONFIG.DEMO_MODE) {
+      await fetchPlayerData();
+    }
+
+    updateUI();
+    enableSpins();
+    showMsg(t('connect_to_play').replace('Connect', '✅'), 'info');
+  } catch (e) {
+    console.error('Connect error:', e);
+    document.getElementById('connectBtn').disabled = false;
+  }
+}
+
+async function fetchUPProfile(address) {
+  // Haal naam en avatar op via ERC725 / LUKSO profile reader
+  try {
+    // Eenvoudige aanpak: lees via de UP API
+    const response = await fetch(`https://api.universalprofile.cloud/v1/${address}`)
+      .catch(() => null);
+
+    if (response && response.ok) {
+      const data = await response.json();
+      const profile = data?.LSP3Profile?.LSP3Profile || data?.LSP3Profile;
+
+      if (profile) {
+        state.profileName   = profile.name || shortenAddr(address);
+        // Avatar: probeer eerste image
+        const images = profile.profileImage || [];
+        if (images.length && images[0].url) {
+          state.profileAvatar = images[0].url.replace('ipfs://', 'https://api.universalprofile.cloud/ipfs/');
+        }
+      }
+    }
+  } catch (e) {
+    // Fallback: kort adres
+  }
+  state.profileName = state.profileName || shortenAddr(address);
+  updateProfileUI();
+}
+
+async function fetchPlayerData() {
+  try {
+    const rpcProvider = new ethers.JsonRpcProvider(CONFIG.LUKSO_RPC);
+    const contract    = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, rpcProvider);
+    const [freeSpins, pendingBal, totalSpins, totalWins] =
+      await contract.getPlayerInfo(state.address);
+
+    state.freeSpins      = Number(freeSpins);
+    state.pendingBalance = parseFloat(ethers.formatEther(pendingBal));
+
+    // Recovery banner tonen als er speeltegoed vast zit
+    if (state.pendingBalance > 0) {
+      showRecoveryBanner();
+    }
+  } catch (e) {
+    console.warn('fetchPlayerData error:', e);
+  }
+}
+
+function disconnectWallet() {
+  state.connected  = false;
+  state.address    = null;
+  state.freeSpins  = 0;
+  updateUI();
+  document.getElementById('spinBtn').disabled     = true;
+  document.getElementById('freeSpinBtn').disabled  = true;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  RECOVERY
+// ─────────────────────────────────────────────────────────────
+function showRecoveryBanner() {
+  const banner = document.getElementById('recoveryBanner');
+  const text   = document.getElementById('recoveryText');
+  text.textContent = t('recovery_msg', state.pendingBalance.toFixed(3));
+  banner.classList.remove('hidden');
+}
+
+async function recoverBalance() {
+  if (CONFIG.DEMO_MODE) {
+    document.getElementById('recoveryBanner').classList.add('hidden');
+    return;
+  }
+  try {
+    showTxOverlay(t('recover'));
+    const browserProvider = new ethers.BrowserProvider(window.lukso || window.ethereum);
+    const signer          = await browserProvider.getSigner();
+    const contract        = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
+    const tx              = await contract.claimPendingBalance();
+    await tx.wait();
+    state.pendingBalance  = 0;
+    document.getElementById('recoveryBanner').classList.add('hidden');
+  } catch (e) {
+    console.error('Recovery error:', e);
+  } finally {
+    hideTxOverlay();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SPIN UITVOEREN
+// ─────────────────────────────────────────────────────────────
+async function doSpin(isFreeSpin) {
+  if (state.spinning) return;
+  if (!state.connected) { showMsg(t('connect_to_play'), 'warn'); return; }
+
+  // Sessie limiet check
+  if (!isFreeSpin && state.sessionLimit > 0) {
+    if (state.sessionSpent + 0.1 > state.sessionLimit) {
+      showMsg('⚠️ Session limit reached', 'warn'); return;
+    }
+  }
+
+  // Free spin check
+  if (isFreeSpin && state.freeSpins <= 0) return;
+
+  state.spinning = true;
+  setSpinBtnsDisabled(true);
+  hideCollect();
+
+  if (CONFIG.DEMO_MODE) {
+    await demoSpin(isFreeSpin);
+  } else {
+    await onChainSpin(isFreeSpin);
+  }
+
+  state.spinning = false;
+  setSpinBtnsDisabled(false);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DEMO SPIN
+// ─────────────────────────────────────────────────────────────
+async function demoSpin(isFreeSpin) {
+  showMsg(t('spinning'), 'info');
+
+  const pool = buildWeightedPool();
+  const r1   = pick(pool);
+  const r2   = pick(pool);
+  const r3   = pick(pool);
+
+  // Rollen draaien direct — geen wachten
+  await animateReels([r1, r2, r3]);
+
+  // Bepaal prijs (client-side simulatie)
+  const prize = determineDemoPrize(r1, r2, r3);
+  processPrize(prize, isFreeSpin);
+}
+
+function buildWeightedPool() {
+  const pool = [];
+  SYMBOLS.forEach((s, i) => {
+    for (let w = 0; w < WEIGHTS[i]; w++) pool.push(s);
+  });
+  return pool;
+}
+
+function pick(pool) { return pool[Math.floor(Math.random() * pool.length)]; }
+
+function determineDemoPrize(r1, r2, r3) {
+  const prizeMap = {
+    0: 'jackpot', 1: 'rare',  2: 'phlame', 3: 'agentpo',
+    4: 'slyx',    5: 'uncommon', 6: 'lyxlarge', 7: 'lyxsmall',
+    8: 'lyxsmall',9: 'free3',
+  };
+  if (r1.id === r2.id && r2.id === r3.id) {
+    return prizeMap[r1.id] || 'lyxsmall';
+  }
+  if (r1.id === r2.id || r2.id === r3.id) {
+    const sym = r1.id === r2.id ? r1.id : r2.id;
+    if (sym <= 2) return 'common';
+    return Math.random() < 0.5 ? 'lyxsmall' : 'consolation';
+  }
+  // Willekeurig: 1 op 5 kans op troostprijs
+  return Math.random() < 0.2 ? 'consolation' : null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  ON-CHAIN SPIN
+// ─────────────────────────────────────────────────────────────
+async function onChainSpin(isFreeSpin) {
+  const provider = window.lukso || window.ethereum;
+  const ethProvider = new ethers.BrowserProvider(provider);
+  const signer      = await ethProvider.getSigner();
+  const contract    = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
+
+  try {
+    // Stap 1: Commit
+    showMsg(t('commit'), 'info');
+    showTxOverlay(t('commit'), '1/2');
+
+    const secret     = ethers.toBigInt(ethers.randomBytes(32));
+    const commitHash = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(
+        ['uint256', 'address'], [secret, state.address]
+      )
+    );
+
+    const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
+    const commitTx = await contract.commitSpin(commitHash, { value });
+    await commitTx.wait();
+
+    // Stap 2: Reveal
+    showMsg(t('reveal'), 'info');
+    showTxOverlay(t('reveal'), '2/2');
+
+    const revealTx  = await contract.revealSpin(secret);
+    const receipt   = await revealTx.wait();
+
+    hideTxOverlay();
+
+    // Event uitlezen
+    const iface = new ethers.Interface(FAIR_ABI);
+    let r1 = 0, r2 = 0, r3 = 0, prizeType = 0;
+    for (const log of receipt.logs) {
+      try {
+        const parsed = iface.parseLog(log);
+        if (parsed?.name === 'SpinRevealed') {
+          r1 = Number(parsed.args.r1);
+          r2 = Number(parsed.args.r2);
+          r3 = Number(parsed.args.r3);
+          prizeType = Number(parsed.args.prizeType);
+          break;
+        }
+      } catch {}
+    }
+
+    const sym1 = SYMBOLS.find(s => s.id === r1) || SYMBOLS[0];
+    const sym2 = SYMBOLS.find(s => s.id === r2) || SYMBOLS[0];
+    const sym3 = SYMBOLS.find(s => s.id === r3) || SYMBOLS[0];
+
+    // Animeer onmiddellijk met de echte uitkomst
+    await animateReels([sym1, sym2, sym3]);
+
+    // Prijs verwerken op basis van on-chain prizeType
+    const prizeKeys = [
+      null,'jackpot','rare','phlame','agentpo','slyx',
+      'uncommon','common','lyxlarge','lyxsmall',
+      'free5','free3','consolation'
+    ];
+    processPrize(prizeKeys[prizeType] || null, isFreeSpin);
+
+    // Saldo updaten
+    const balHex = await provider.request({
+      method: 'eth_getBalance', params: [state.address, 'latest']
+    });
+    state.balance = parseFloat((parseInt(balHex, 16) / 1e18).toFixed(3));
+
+    // Free spins updaten
+    await fetchPlayerData();
+    updateUI();
+
+    if (!isFreeSpin) {
+      state.sessionSpent += 0.1;
+      updateLimitBar();
+    }
+
+  } catch (e) {
+    hideTxOverlay();
+    console.error('Spin error:', e);
+    showMsg('⚠️ ' + (e.reason || e.message || 'Transaction failed'), 'warn');
+    state.spinning = false;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PRIJS VERWERKEN
+// ─────────────────────────────────────────────────────────────
+function processPrize(prizeKey, isFreeSpin) {
+  const outer = document.getElementById('reelsOuter');
+  state.sessionSpins++;
+
+  if (!prizeKey) {
+    outer.classList.remove('winning');
+    showMsg(t('no_win'), '');
+    updateStats();
+    return;
+  }
+
+  // Win!
+  outer.classList.add('winning');
+  state.sessionWins++;
+
+  const prizeLabels = {
+    jackpot:    () => { state.sessionNFTs++;   confetti(50); return t('win_jackpot'); },
+    rare:       () => { state.sessionNFTs++;   confetti(30); return t('win_rare'); },
+    uncommon:   () => { state.sessionNFTs++;   confetti(20); return t('win_uncommon'); },
+    common:     () => { state.sessionNFTs++;   confetti(10); return t('win_common'); },
+    phlame:     () => { state.sessionPHLAME += 100; return t('win_phlame'); },
+    agentpo:    () => { state.sessionAGENTPO += 50;  return t('win_agentpo'); },
+    slyx:       () => { state.sessionSLYX += 10;     return t('win_slyx'); },
+    lyxlarge:   () => { confetti(15); return t('win_lyxlarge'); },
+    lyxsmall:   () => t('win_lyxsmall'),
+    free5:      () => { state.freeSpins += 5; return t('win_free5'); },
+    free3:      () => { state.freeSpins += 3; return t('win_free3'); },
+    consolation:() => { state.freeSpins += 1; return t('win_consolation'); },
+  };
+
+  const fn     = prizeLabels[prizeKey];
+  const msg    = fn ? fn() : prizeKey;
+  state.lastWin = msg;
+
+  showMsg(msg, 'win');
+  updateStats();
+  updateFreeSpinBtn();
+
+  // Toon Collect + Tweet knoppen
+  setTimeout(() => {
+    document.getElementById('collectBtn').classList.add('visible');
+    document.getElementById('tweetBtn').classList.add('visible');
+    outer.classList.remove('winning');
+  }, 2000);
+
+  if (CONFIG.DEMO_MODE) {
+    showMsg(msg + ' · ' + t('demo_spin'), 'win');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  WINSTEN INNEN
+// ─────────────────────────────────────────────────────────────
+async function collectWinnings() {
+  if (!CONFIG.DEMO_MODE) {
+    // On-chain: contract stuurt tokens/NFTs automatisch
+    // Enkel UI resetten nodig
+  }
+  hideCollect();
+  showMsg('✅ Collected!', 'info');
+
+  // Reset sessie tellers
+  state.sessionSLYX = state.sessionPHLAME = state.sessionAGENTPO = state.sessionNFTs = 0;
+  updateStats();
+}
+
+function hideCollect() {
+  document.getElementById('collectBtn').classList.remove('visible');
+  document.getElementById('tweetBtn').classList.remove('visible');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  DELEN OP X
+// ─────────────────────────────────────────────────────────────
+function shareOnX() {
+  const text  = t('tweet_won', state.lastWin || '');
+  const url   = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+  window.open(url, '_blank');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SESSIE LIMIET
+// ─────────────────────────────────────────────────────────────
+function updateLimit() {
+  const val = parseFloat(document.getElementById('limitInput').value);
+  state.sessionLimit = isNaN(val) || val <= 0 ? 0 : val;
+  updateLimitBar();
+}
+
+function updateLimitBar() {
+  if (!state.sessionLimit) {
+    document.getElementById('limitFill').style.width = '0%';
+    document.getElementById('limitText').textContent  = '—';
+    return;
+  }
+  const pct  = Math.min((state.sessionSpent / state.sessionLimit) * 100, 100);
+  const fill = document.getElementById('limitFill');
+  fill.style.width = pct + '%';
+  fill.className   = 'limit-fill' + (pct > 80 ? ' danger' : pct > 60 ? ' warn' : '');
+  document.getElementById('limitText').textContent =
+    state.sessionSpent.toFixed(1) + '/' + state.sessionLimit.toFixed(1) + ' LYX';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TX OVERLAY
+// ─────────────────────────────────────────────────────────────
+function showTxOverlay(msg, step) {
+  document.getElementById('txMessage').textContent = msg || '';
+  document.getElementById('txStep').textContent    = step ? `Stap ${step}` : '';
+  document.getElementById('txOverlay').classList.add('visible');
+}
+function hideTxOverlay() {
+  document.getElementById('txOverlay').classList.remove('visible');
+}
+
+// ─────────────────────────────────────────────────────────────
+//  UI HULPFUNCTIES
+// ─────────────────────────────────────────────────────────────
+function updateUI() {
+  updateProfileUI();
+  updateFreeSpinBtn();
+  updateStats();
+}
+
+function updateProfileUI() {
+  const showProfile = state.connected;
+  document.getElementById('connectBtn').style.display      = showProfile ? 'none' : 'flex';
+  document.getElementById('profileDisplay').style.display  = showProfile ? 'flex' : 'none';
+
+  if (showProfile) {
+    document.getElementById('profileName').textContent    = state.profileName || shortenAddr(state.address);
+    document.getElementById('profileBalance').textContent = state.balance.toFixed(2) + ' LYX';
+
+    if (state.profileAvatar) {
+      document.getElementById('profileAvatar').src = state.profileAvatar;
+      document.getElementById('profileAvatar').style.display = 'block';
+      document.getElementById('profileAvatarFallback').style.display = 'none';
+    }
+  }
+}
+
+function updateFreeSpinBtn() {
+  const btn = document.getElementById('freeSpinBtn');
+  btn.disabled = !state.connected || state.freeSpins <= 0;
+  document.getElementById('freeCount').textContent = state.freeSpins;
+}
+
+function updateStats() {
+  document.getElementById('statSpins').textContent   = state.sessionSpins;
+  document.getElementById('statWins').textContent    = state.sessionWins;
+  document.getElementById('statSLYX').textContent    = state.sessionSLYX;
+  document.getElementById('statPHLAME').textContent  = state.sessionPHLAME;
+  document.getElementById('statAGENTPO').textContent = state.sessionAGENTPO;
+  document.getElementById('statNFTs').textContent    = state.sessionNFTs;
+}
+
+function enableSpins() {
+  document.getElementById('spinBtn').disabled      = false;
+  document.getElementById('freeSpinBtn').disabled  = state.freeSpins <= 0;
+}
+
+function setSpinBtnsDisabled(v) {
+  document.getElementById('spinBtn').disabled     = v;
+  document.getElementById('freeSpinBtn').disabled  = v || state.freeSpins <= 0;
+}
+
+function showMsg(text, type) {
+  const bar = document.getElementById('msgBar');
+  bar.textContent  = text;
+  bar.className    = 'message-bar' + (type ? ' ' + type : '');
+}
+
+function shortenAddr(addr) {
+  return addr ? addr.substring(0,6) + '…' + addr.slice(-4) : '—';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CONFETTI
+// ─────────────────────────────────────────────────────────────
+function confetti(n = 20) {
+  const colors = ['#bf5af2','#ffd700','#34d399','#f87171','#60a5fa','#fff'];
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left: ${Math.random() * 100}vw;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      --dur: ${2 + Math.random() * 2}s;
+      --delay: ${Math.random() * 0.5}s;
+      --dx: ${(Math.random() - 0.5) * 200}px;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  UITBETAALTABEL
+// ─────────────────────────────────────────────────────────────
+function buildPayoutTable() {
+  const rows = [
+    ['🔵🔵🔵', '🏆 Mythic NFT (Tier 1)', '0.001%'],
+    ['🆙🆙🆙', '💜 Rare NFT (Tier 2)',   '0.003%'],
+    ['🔥🔥🔥', '🔥 PHLAME tokens',       '0.006%'],
+    ['🐰🐰🐰', '🤖 AGENTPO tokens',      '0.012%'],
+    ['🐘🐘🐘', '💎 sLYX tokens',         '0.02%'],
+    ['🐙🐙🐙', '🌟 Uncommon NFT (Tier 3)','0.03%'],
+    ['💎💎💎', '💰 0.05 LYX',            '0.07%'],
+    ['💵💵💵', '💵 0.02 LYX',            '0.17%'],
+    ['🪙🪙🪙', '🎟️ 5 Free Spins',        '0.2%'],
+    ['🎟️🎟️🎟️','🎟️ 3 Free Spins',        '0.5%'],
+    ['🖼️ 2×high','🖼️ Common NFT (Tier 4)', '~2%'],
+    ['Any 2×',  '💵 0.02 LYX',           '~5%'],
+    ['Streak',  '🎟️ 1 Free Spin',         'Every 5 spins'],
+  ];
+  const container = document.getElementById('payoutTable');
+  container.innerHTML = rows.map(([combo, prize, chance]) => `
+    <div class="payout-row">
+      <span class="payout-combo">${combo}</span>
+      <span class="payout-prize">${prize}</span>
+      <span class="payout-chance">${chance}</span>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>

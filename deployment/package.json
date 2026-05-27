@@ -1,0 +1,24 @@
+{
+  "name": "lukso-fair-deployment",
+  "version": "1.0.0",
+  "scripts": {
+    "deploy:testnet": "npx hardhat run scripts/deploy.js --network luksoTestnet",
+    "deploy:mainnet": "npx hardhat run scripts/deploy.js --network luksoMainnet",
+    "setup:mainnet": "npx hardhat run scripts/setup.js --network luksoMainnet",
+    "setup:testnet": "npx hardhat run scripts/setup.js --network luksoTestnet",
+    "mint:spin": "npx hardhat run scripts/mint_spin.js --network luksoMainnet",
+    "deploy:session": "npx hardhat run scripts/deploy_session.js --network luksoMainnet",
+    "deploy:v2": "npx hardhat run scripts/deploy_v2.js --network luksoMainnet",
+    "update:session": "npx hardhat run scripts/update_session.js --network luksoMainnet",
+    "deploy:session2": "npx hardhat run scripts/deploy_session_v2.js --network luksoMainnet",
+    "check:session": "npx hardhat run scripts/refund_session.js --network luksoMainnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "hardhat": "^2.19.0",
+    "dotenv": "^16.0.0"
+  },
+  "dependencies": {
+    "@lukso/lsp-smart-contracts": "^0.14.0"
+  }
+}
