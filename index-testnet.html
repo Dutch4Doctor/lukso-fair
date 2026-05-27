@@ -1412,6 +1412,24 @@ async function onChainSpin(isFreeSpin) {
     );
 
     const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
+    // Check of er al een actieve commit is - zo ja, eerst opruimen
+    try {
+      const rpc2 = new ethers.JsonRpcProvider(CONFIG.LUKSO_RPC);
+      const c3 = new ethers.Contract(CONFIG.FAIR_CONTRACT, [
+        "function commits(address) view returns (bytes32,uint256,bool,uint256)",
+        "function getPlayerInfo(address) view returns (uint256,uint256,uint256,uint256,bool,uint256)",
+      ], rpc2);
+      const info = await c3.getPlayerInfo(state.address);
+      const hasActiveCommit = info[4]; // index 4 = hasActiveCommit
+      if (hasActiveCommit) {
+        hideTxOverlay();
+        showMsg('⚠️ Actieve commit gevonden - klik Recover eerst!', 'warn');
+        document.getElementById('recoveryBanner').style.display = 'flex';
+        state.spinning = false;
+        return;
+      }
+    } catch(e) { console.warn('Commit check error:', e); }
+
     // Simuleer eerst om revert reden te zien
     try {
       await contract.commitSpin.staticCall(commitHash, { value, from: state.address });
