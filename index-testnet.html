@@ -1528,10 +1528,29 @@ function determineDemoPrize(r1, r2, r3) {
 //  ON-CHAIN SPIN
 // ─────────────────────────────────────────────────────────────
 async function onChainSpin(isFreeSpin) {
-  const provider = window.lukso || window.ethereum;
-  const ethProvider = new ethers.BrowserProvider(provider);
-  const signer      = await ethProvider.getSigner();
-  const contract    = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
+  const rawProvider = window.lukso || window.ethereum;
+  if (!rawProvider) { showMsg('No wallet found', 'warn'); state.spinning = false; return; }
+  
+  const ethProvider = new ethers.BrowserProvider(rawProvider);
+  
+  // Zorg dat we op het juiste netwerk zitten
+  const network = await ethProvider.getNetwork();
+  const chainId = Number(network.chainId);
+  if (chainId !== CONFIG.CHAIN_ID) {
+    try {
+      await rawProvider.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0x' + CONFIG.CHAIN_ID.toString(16) }],
+      });
+    } catch(e) {
+      showMsg('Switch to LUKSO Testnet first', 'warn');
+      state.spinning = false;
+      return;
+    }
+  }
+  
+  const signer  = await ethProvider.getSigner();
+  const contract = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
 
   try {
     // Stap 1: Commit
@@ -1546,7 +1565,12 @@ async function onChainSpin(isFreeSpin) {
     );
 
     const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
-    const commitTx = await contract.commitSpin(commitHash, { value, gasLimit: 300000 });
+    // Forceer gas limit om estimateGas te omzeilen op LUKSO mobiel
+    const commitTx = await contract.commitSpin(commitHash, {
+      value,
+      gasLimit: 500000,
+      gasPrice: ethers.parseUnits('1', 'gwei'),
+    });
     await commitTx.wait();
 
     // Stap 2: Reveal
@@ -1839,6 +1863,87 @@ function buildPayoutTable() {
     </div>
   `).join('');
 }
+
+
+// ─── SESSIE LIMIET FUNCTIES ──────────────────────────────────
+function openLimitModal() {
+  document.getElementById('limitModal').classList.add('open');
+  document.getElementById('limitInput').value = '';
+  document.getElementById('limitInput').focus();
+}
+
+function setSessionLimit() {
+  const val = parseFloat(document.getElementById('limitInput').value);
+  if (!val || val < 0.1) {
+    document.getElementById('limitInput').focus();
+    return;
+  }
+
+  // Demo mode — gewoon saldo instellen
+  if (CONFIG.DEMO_MODE || !CONFIG.SESSION_MANAGER) {
+    state.sessionLimit     = val;
+    state.sessionLimitUsed = 0;
+    state.sessionBalance   = val;
+    document.getElementById('limitModal').classList.remove('open');
+    updateSessionBalance();
+    return;
+  }
+
+  // Productie — stort LYX in SessionManager contract
+  try {
+    document.getElementById('limitModal').classList.remove('open');
+    showTxOverlay('Starting session... please approve in your UP extension');
+
+    const provider = new ethers.BrowserProvider(window.lukso || window.ethereum);
+    const signer   = await provider.getSigner();
+
+    const SM_ABI = [
+      "function startSession() external payable",
+      "function sessionBalance(address) external view returns (uint256)",
+    ];
+
+    const sm = new ethers.Contract(CONFIG.SESSION_MANAGER, SM_ABI, signer);
+    const tx = await sm.startSession({ value: ethers.parseEther(val.toString()) });
+    await tx.wait();
+
+    state.sessionLimit     = val;
+    state.sessionLimitUsed = 0;
+    state.sessionBalance   = val;
+
+    hideTxOverlay();
+    updateSessionBalance();
+    console.log('✅ Sessie gestart met', val, 'LYX');
+  } catch(e) {
+    hideTxOverlay();
+    console.error('Sessie starten mislukt:', e);
+    alert('Could not start session: ' + e.message);
+  }
+}
+
+function skipSessionLimit() {
+  state.sessionLimit     = null;
+  state.sessionLimitUsed = 0;
+  document.getElementById('limitModal').classList.remove('open');
+}
+
+function checkSessionLimit() {
+  if (!state.sessionLimit) return false;
+  if (state.sessionLimitUsed >= state.sessionLimit) {
+    const txt = document.getElementById('limitReachedText');
+    if (txt) txt.textContent = `${t('limit_reached_desc')} (${state.sessionLimit} LYX)`;
+    document.getElementById('limitReachedModal').classList.add('open');
+    document.getElementById('btnSpin').disabled = true;
+    return true; // limiet bereikt
+  }
+  return false;
+}
+
+function raiseLimitAction() {
+  document.getElementById('limitReachedModal').classList.remove('open');
+  openLimitModal();
+}
+
+
 </script>
 ══════════════════════════════════════════ -->
 <div id="limitModal" class="limit-modal">
