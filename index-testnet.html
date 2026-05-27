@@ -537,6 +537,63 @@ body::before {
 .limit-fill.danger { background: var(--danger); }
 
 /* ═══════════════════════════════════════════════
+   INFO MODAL
+═══════════════════════════════════════════════ */
+.info-btn {
+  position: fixed; bottom: 20px; right: 20px;
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+  border: none; border-radius: 50%;
+  color: white; font-size: 20px;
+  cursor: pointer; z-index: 50;
+  box-shadow: 0 4px 16px var(--purple-glow);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.info-btn:hover { transform: scale(1.1); }
+
+.info-modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(5,0,15,0.9);
+  backdrop-filter: blur(8px);
+  align-items: center; justify-content: center;
+  padding: 16px;
+}
+.info-modal.visible { display: flex; }
+.info-box {
+  background: linear-gradient(180deg, #1e0042, #12002a);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 20px;
+  max-width: 420px; width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.info-box h2 {
+  font-size: 18px; font-weight: 900;
+  color: var(--gold); margin-bottom: 12px;
+  text-align: center;
+}
+.info-box h3 {
+  font-size: 13px; font-weight: 700;
+  color: var(--purple); margin: 12px 0 6px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.info-box p, .info-box li {
+  font-size: 12px; color: var(--text-muted);
+  line-height: 1.6; margin-bottom: 4px;
+}
+.info-box ul { padding-left: 16px; }
+.info-close {
+  width: 100%; margin-top: 16px;
+  padding: 10px; border: none; border-radius: 10px;
+  background: var(--purple); color: white;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════
    UITBETAALTABEL
 ═══════════════════════════════════════════════ */
 details.payout-section {
@@ -1624,5 +1681,47 @@ function buildPayoutTable() {
   `).join('');
 }
 </script>
+<!-- INFO KNOP -->
+<button class="info-btn" onclick="document.getElementById('infoModal').classList.add('visible')">ℹ️</button>
+
+<!-- INFO MODAL -->
+<div class="info-modal" id="infoModal">
+  <div class="info-box">
+    <h2>🎰 LUKSO Slots</h2>
+    <h3>🎡 What is LUKSO Fair?</h3>
+    <p>LUKSO Fair is a blockchain carnival built on LUKSO. Play games to win unique NFTs, tokens and LYX!</p>
+    <h3>🎮 How to play</h3>
+    <ul>
+      <li>Connect your Universal Profile</li>
+      <li>Each spin costs <strong>0.1 LYX</strong></li>
+      <li>Win NFTs, sLYX, PHLAME, AGENTPO or free spins</li>
+      <li>Use free spin tokens (🎟️) for free spins</li>
+      <li>Set a session limit for responsible play</li>
+    </ul>
+    <h3>🏆 Prize tiers</h3>
+    <ul>
+      <li>🏆 <strong>Mythic NFT</strong> — 3× LUKSO logo</li>
+      <li>💜 <strong>Rare NFT</strong> — 3× UP logo</li>
+      <li>🌟 <strong>Uncommon NFT</strong> — 3× Emmet</li>
+      <li>🖼️ <strong>Common NFT</strong> — 2× rare symbol</li>
+      <li>💰 <strong>LYX tokens</strong> — 3× Bills or Coins</li>
+      <li>🎟️ <strong>Free spins</strong> — 3× Free Spin symbol</li>
+      <li>🎟️ <strong>Consolation spin</strong> — every 5 spins</li>
+    </ul>
+    <h3>🔒 Fairness</h3>
+    <ul>
+      <li>All spins use a commit-reveal system on LUKSO blockchain</li>
+      <li>Results cannot be influenced by owner or player</li>
+      <li>Prize pool is locked in the smart contract</li>
+    </ul>
+    <h3>💜 About</h3>
+    <p>Built with ❤️ by <strong>@Dutch4Doctor</strong> for the LUKSO community. More games coming soon!</p>
+    <p style="margin-top:8px; font-size:11px; color:var(--text-muted)">
+      Platform: <a href="https://profile.link/lukso-fair@fBC4" style="color:var(--purple)">LUKSO Fair</a>
+    </p>
+    <button class="info-close" onclick="document.getElementById('infoModal').classList.remove('visible')">Close</button>
+  </div>
+</div>
+
 </body>
 </html>
