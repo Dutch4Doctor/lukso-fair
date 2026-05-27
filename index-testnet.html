@@ -536,164 +536,6 @@ body::before {
 .limit-fill.warn { background: var(--warn); }
 .limit-fill.danger { background: var(--danger); }
 
-.limit-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.88);
-  z-index: 1002;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.limit-modal.open { display: flex; }
-.limit-modal-inner {
-  background: linear-gradient(180deg, #0d0020 0%, #1a0033 100%);
-  border: 2px solid var(--purple);
-  border-radius: 16px;
-  padding: 28px 24px;
-  max-width: 380px;
-  width: 100%;
-  text-align: center;
-}
-.limit-modal-inner h2 {
-  color: var(--gold);
-  font-size: 17px;
-  margin: 0 0 8px 0;
-}
-.limit-modal-inner p {
-  color: #bbb;
-  font-size: 13px;
-  margin: 0 0 20px 0;
-  line-height: 1.6;
-}
-.limit-input-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-.limit-input {
-  background: #1a0033;
-  border: 1px solid var(--purple);
-  color: white;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 16px;
-  width: 120px;
-  text-align: center;
-}
-.limit-input:focus { outline: none; border-color: var(--gold); }
-.limit-unit { color: var(--gold); font-weight: 700; }
-.limit-btn-row {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-.limit-btn-set {
-  background: linear-gradient(135deg, var(--purple), #440088);
-  border: none;
-  color: white;
-  padding: 11px 22px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-.limit-btn-set:hover { transform: translateY(-2px); }
-.limit-btn-skip {
-  background: transparent;
-  border: 1px solid #555;
-  color: #aaa;
-  padding: 11px 22px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-.limit-btn-skip:hover { border-color: #888; color: #ccc; }
-
-/* Limiet bereikt modal */
-.limit-reached-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.92);
-  z-index: 1003;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.limit-reached-modal.open { display: flex; }
-.limit-reached-inner {
-  background: linear-gradient(180deg, #1a0000 0%, #2d0000 100%);
-  border: 2px solid #ff4444;
-  border-radius: 16px;
-  padding: 28px 24px;
-  max-width: 360px;
-  width: 100%;
-  text-align: center;
-}
-.limit-reached-inner h2 {
-  color: #ff6666;
-  font-size: 17px;
-  margin: 0 0 8px 0;
-}
-.limit-reached-inner p {
-  color: #ccc;
-  font-size: 13px;
-  margin: 0 0 20px 0;
-  line-height: 1.6;
-}
-.limit-reached-btn-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.btn-raise-limit {
-  background: linear-gradient(135deg, #ff4444, #aa0000);
-  border: none;
-  color: white;
-  padding: 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-.btn-raise-limit:hover { transform: translateY(-2px); }
-.btn-collect-limit {
-  background: linear-gradient(135deg, var(--green, #34c759), #1a6e2e);
-  border: none;
-  color: white;
-  padding: 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-.btn-collect-limit:hover { transform: translateY(-2px); }
-
-/* ═══════════════════════════════════════════════
-   UITBETALINGSTABEL MODAL
-═══════════════════════════════════════════════ */
-.payout-btn {
-  background: linear-gradient(135deg, #1a0033, #2d0055);
-  border: 1px solid var(--purple);
-  color: var(--gold);
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  transition: all 0.2s;
-  margin-top: 8px;
-}
-
 /* ═══════════════════════════════════════════════
    INFO MODAL
 ═══════════════════════════════════════════════ */
@@ -1014,34 +856,34 @@ details.payout-section[open] summary::after { content: '▲'; }
 </div>
 
 <script>
-// ==============================================================╗
-// //               LUKSO Slots — Frontend v2.0                   //
-// ==============================================================╝
+// 
+//                LUKSO Slots — Frontend v2.0                   
+// 
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  CONFIGURATIE
-// ─────────────────────────────────────────────────────────────
+// 
 const CONFIG = {
-  // ── Zet op false om echte transacties te sturen ──
+  //  Zet op false om echte transacties te sturen 
   DEMO_MODE:    false,  // TESTNET — echte transacties!
 
-  // ── Contract adressen (mainnet) ──────────────────
+  //  Contract adressen (mainnet) 
   // Testnet: vervang deze door testnet adressen in index-testnet.html
-  SPIN_TOKEN:   '0x4a4297539D76Ef72722191484F403295239950e2', // testnet
-  NFT_CONTRACT: '0xA4DBcf07203cA254ED54103A285B658d9A547aBD', // testnet
+  SPIN_TOKEN:   '0x9655A036EA8fe8BA491cd958567575E278b952B1', // testnet
+  NFT_CONTRACT: '0x5a388CC6fb04552DCD5CABD6ccAD9F7E70B2C538', // testnet
   FAIR_CONTRACT:'0x0eC4E227457BFE6B873c9AB7109D2bc3543Aa47B', // testnet
 
   PLATFORM_URL: 'https://profile.link/lukso-fair@fBC4',
   LUKSO_RPC:    'https://rpc.testnet.lukso.network',
   CHAIN_ID:     4201, // testnet
 
-  // ── IPFS ─────────────────────────────────────────
+  //  IPFS 
   IMAGES_CID:   'bafybeicr5g7jexfkaetxisu5paoqc2luiooi37rf7gybs6bja7hiofm354',
 };
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  SYMBOLEN (10 stuks, id moet overeenkomen met contract)
-// ─────────────────────────────────────────────────────────────
+// 
 const SYMBOLS = [
   { id:0, key:'LUKSO',     emoji:'🔵', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/1_lukso_logo.png',     label:'LUKSO' },
   { id:1, key:'UP',        emoji:'🆙', img:'afbeeldingen%20t.b.v.%20rollen%20fruitautomaat/2_up_logo.png',         label:'UP' },
@@ -1058,9 +900,9 @@ const SYMBOLS = [
 // SPIN gewichten (moeten overeenkomen met contract _pickSymbol)
 const WEIGHTS = [2,3,4,5,6,7,9,12,14,38];
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  VERTALINGEN
-// ─────────────────────────────────────────────────────────────
+// 
 const I18N = {
   en: {
     connect:        'Connect',
@@ -1132,9 +974,9 @@ const I18N = {
   }
 };
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  CONTRACT ABI (minimaal)
-// ─────────────────────────────────────────────────────────────
+// 
 const FAIR_ABI = [
   "function commitSpin(bytes32 commitHash) external payable",
   "function revealSpin(uint256 secret) external",
@@ -1144,9 +986,9 @@ const FAIR_ABI = [
   "event SpinRevealed(address indexed player, uint8 r1, uint8 r2, uint8 r3, uint8 prizeType, bool isFreeSpin)"
 ];
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  STATE
-// ─────────────────────────────────────────────────────────────
+// 
 const state = {
   lang:           'en',
   connected:      false,
@@ -1172,9 +1014,9 @@ const state = {
   profileAvatar:  null,
 };
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  INITIALISATIE
-// ─────────────────────────────────────────────────────────────
+// 
 document.addEventListener('DOMContentLoaded', () => {
   buildLights();
   buildReels();
@@ -1207,9 +1049,9 @@ function applyLang(lang) {
   buildPayoutTable();
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  KERMIS LICHTJES
-// ─────────────────────────────────────────────────────────────
+// 
 function buildLights() {
   const colors = ['gold','purple','white','gold','purple','white','gold'];
   const container = document.getElementById('lights');
@@ -1221,9 +1063,9 @@ function buildLights() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  ROLLEN OPBOUWEN
-// ─────────────────────────────────────────────────────────────
+// 
 function buildReels() {
   // Bouw een gewogen symbool-pool voor willekeurige keuzes
   const pool = [];
@@ -1258,9 +1100,9 @@ function makeSymbolEl(sym) {
   return div;
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  ANIMATIE — SMOOTH & SNEL
-// ─────────────────────────────────────────────────────────────
+// 
 async function animateReels(finalSymbols) {
   // Rollen draaien onmiddellijk — uitkomst wordt aan het einde vastgezet
   const promises = finalSymbols.map((sym, r) => animateReel(r, sym));
@@ -1316,9 +1158,9 @@ function animateReel(reelIdx, finalSym) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  WALLET VERBINDEN
-// ─────────────────────────────────────────────────────────────
+// 
 async function connectWallet() {
   const provider = window.lukso || window.ethereum;
   if (!provider) {
@@ -1415,9 +1257,9 @@ function disconnectWallet() {
   document.getElementById('freeSpinBtn').disabled  = true;
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  RECOVERY
-// ─────────────────────────────────────────────────────────────
+// 
 function showRecoveryBanner() {
   const banner = document.getElementById('recoveryBanner');
   const text   = document.getElementById('recoveryText');
@@ -1446,9 +1288,9 @@ async function recoverBalance() {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  SPIN UITVOEREN
-// ─────────────────────────────────────────────────────────────
+// 
 async function doSpin(isFreeSpin) {
   if (state.spinning) return;
   if (!state.connected) { showMsg(t('connect_to_play'), 'warn'); return; }
@@ -1477,9 +1319,9 @@ async function doSpin(isFreeSpin) {
   setSpinBtnsDisabled(false);
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  DEMO SPIN
-// ─────────────────────────────────────────────────────────────
+// 
 async function demoSpin(isFreeSpin) {
   showMsg(t('spinning'), 'info');
 
@@ -1524,36 +1366,16 @@ function determineDemoPrize(r1, r2, r3) {
   return Math.random() < 0.2 ? 'consolation' : null;
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  ON-CHAIN SPIN
-// ─────────────────────────────────────────────────────────────
+// 
 async function onChainSpin(isFreeSpin) {
-  const rawProvider = window.lukso || window.ethereum;
-  if (!rawProvider) { showMsg('No wallet found', 'warn'); state.spinning = false; return; }
-  
-  const ethProvider = new ethers.BrowserProvider(rawProvider);
-  
-  // Zorg dat we op het juiste netwerk zitten
-  const network = await ethProvider.getNetwork();
-  const chainId = Number(network.chainId);
-  if (chainId !== CONFIG.CHAIN_ID) {
-    try {
-      await rawProvider.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x' + CONFIG.CHAIN_ID.toString(16) }],
-      });
-    } catch(e) {
-      showMsg('Switch to LUKSO Testnet first', 'warn');
-      state.spinning = false;
-      return;
-    }
-  }
-  
-  const signer  = await ethProvider.getSigner();
-  const contract = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
+  const provider = window.lukso || window.ethereum;
+  const ethProvider = new ethers.BrowserProvider(provider);
+  const signer      = await ethProvider.getSigner();
+  const contract    = new ethers.Contract(CONFIG.FAIR_CONTRACT, FAIR_ABI, signer);
 
   try {
-    
     // Stap 1: Commit
     showMsg(t('commit'), 'info');
     showTxOverlay(t('commit'), '1/2');
@@ -1566,12 +1388,7 @@ async function onChainSpin(isFreeSpin) {
     );
 
     const value = isFreeSpin ? 0n : ethers.parseEther('0.1');
-    // Forceer gas limit om estimateGas te omzeilen op LUKSO mobiel
-    const commitTx = await contract.commitSpin(commitHash, {
-      value,
-      gasLimit: 500000,
-      gasPrice: ethers.parseUnits('1', 'gwei'),
-    });
+    const commitTx = await contract.commitSpin(commitHash, { value, gasLimit: 500000 });
     await commitTx.wait();
 
     // Stap 2: Reveal
@@ -1637,9 +1454,9 @@ async function onChainSpin(isFreeSpin) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  PRIJS VERWERKEN
-// ─────────────────────────────────────────────────────────────
+// 
 function processPrize(prizeKey, isFreeSpin) {
   const outer = document.getElementById('reelsOuter');
   state.sessionSpins++;
@@ -1690,9 +1507,9 @@ function processPrize(prizeKey, isFreeSpin) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  WINSTEN INNEN
-// ─────────────────────────────────────────────────────────────
+// 
 async function collectWinnings() {
   if (!CONFIG.DEMO_MODE) {
     // On-chain: contract stuurt tokens/NFTs automatisch
@@ -1711,18 +1528,18 @@ function hideCollect() {
   document.getElementById('tweetBtn').classList.remove('visible');
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  DELEN OP X
-// ─────────────────────────────────────────────────────────────
+// 
 function shareOnX() {
   const text  = t('tweet_won', state.lastWin || '');
   const url   = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
   window.open(url, '_blank');
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  SESSIE LIMIET
-// ─────────────────────────────────────────────────────────────
+// 
 function updateLimit() {
   const val = parseFloat(document.getElementById('limitInput').value);
   state.sessionLimit = isNaN(val) || val <= 0 ? 0 : val;
@@ -1743,9 +1560,9 @@ function updateLimitBar() {
     state.sessionSpent.toFixed(1) + '/' + state.sessionLimit.toFixed(1) + ' LYX';
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  TX OVERLAY
-// ─────────────────────────────────────────────────────────────
+// 
 function showTxOverlay(msg, step) {
   document.getElementById('txMessage').textContent = msg || '';
   document.getElementById('txStep').textContent    = step ? `Stap ${step}` : '';
@@ -1755,9 +1572,9 @@ function hideTxOverlay() {
   document.getElementById('txOverlay').classList.remove('visible');
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  UI HULPFUNCTIES
-// ─────────────────────────────────────────────────────────────
+// 
 function updateUI() {
   updateProfileUI();
   updateFreeSpinBtn();
@@ -1816,9 +1633,9 @@ function shortenAddr(addr) {
   return addr ? addr.substring(0,6) + '…' + addr.slice(-4) : '—';
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  CONFETTI
-// ─────────────────────────────────────────────────────────────
+// 
 function confetti(n = 20) {
   const colors = ['#bf5af2','#ffd700','#34d399','#f87171','#60a5fa','#fff'];
   for (let i = 0; i < n; i++) {
@@ -1836,9 +1653,9 @@ function confetti(n = 20) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
+// 
 //  UITBETAALTABEL
-// ─────────────────────────────────────────────────────────────
+// 
 function buildPayoutTable() {
   const rows = [
     ['🔵🔵🔵', '🏆 Mythic NFT (Tier 1)', '0.001%'],
@@ -1864,129 +1681,7 @@ function buildPayoutTable() {
     </div>
   `).join('');
 }
-
-
-// ─── SESSIE LIMIET FUNCTIES ──────────────────────────────────
-function openLimitModal() {
-  document.getElementById('limitModal').classList.add('open');
-  document.getElementById('limitInput').value = '';
-  document.getElementById('limitInput').focus();
-}
-
-function setSessionLimit() {
-  const val = parseFloat(document.getElementById('limitInput').value);
-  if (!val || val < 0.1) {
-    document.getElementById('limitInput').focus();
-    return;
-  }
-
-  // Demo mode — gewoon saldo instellen
-  if (CONFIG.DEMO_MODE || !CONFIG.SESSION_MANAGER) {
-    state.sessionLimit     = val;
-    state.sessionLimitUsed = 0;
-    state.sessionBalance   = val;
-    document.getElementById('limitModal').classList.remove('open');
-    updateSessionBalance();
-    return;
-  }
-
-  // Productie — stort LYX in SessionManager contract
-  try {
-    document.getElementById('limitModal').classList.remove('open');
-    showTxOverlay('Starting session... please approve in your UP extension');
-
-    const provider = new ethers.BrowserProvider(window.lukso || window.ethereum);
-    const signer   = await provider.getSigner();
-
-    const SM_ABI = [
-      "function startSession() external payable",
-      "function sessionBalance(address) external view returns (uint256)",
-    ];
-
-    const sm = new ethers.Contract(CONFIG.SESSION_MANAGER, SM_ABI, signer);
-    const tx = await sm.startSession({ value: ethers.parseEther(val.toString()) });
-    await tx.wait();
-
-    state.sessionLimit     = val;
-    state.sessionLimitUsed = 0;
-    state.sessionBalance   = val;
-
-    hideTxOverlay();
-    updateSessionBalance();
-    console.log('✅ Sessie gestart met', val, 'LYX');
-  } catch(e) {
-    hideTxOverlay();
-    console.error('Sessie starten mislukt:', e);
-    alert('Could not start session: ' + e.message);
-  }
-}
-
-function skipSessionLimit() {
-  state.sessionLimit     = null;
-  state.sessionLimitUsed = 0;
-  document.getElementById('limitModal').classList.remove('open');
-}
-
-function checkSessionLimit() {
-  if (!state.sessionLimit) return false;
-  if (state.sessionLimitUsed >= state.sessionLimit) {
-    const txt = document.getElementById('limitReachedText');
-    if (txt) txt.textContent = `${t('limit_reached_desc')} (${state.sessionLimit} LYX)`;
-    document.getElementById('limitReachedModal').classList.add('open');
-    document.getElementById('btnSpin').disabled = true;
-    return true; // limiet bereikt
-  }
-  return false;
-}
-
-function raiseLimitAction() {
-  document.getElementById('limitReachedModal').classList.remove('open');
-  openLimitModal();
-}
-
-
 </script>
-<div id="limitModal" class="limit-modal">
-  <div class="limit-modal-inner">
-    <h2>🎰 <span data-i18n="limit_title">Set a Spending Limit?</span></h2>
-    <p data-i18n="limit_desc">You can set a maximum amount of LYX to spend this session. The spin button will be blocked when you reach your limit.</p>
-    <div class="limit-input-row">
-      <input type="number" id="limitInput" class="limit-input" min="0.1" step="0.1" placeholder="0.0">
-      <span class="limit-unit">LYX</span>
-    </div>
-    <div class="limit-btn-row">
-      <button class="limit-btn-set" onclick="setSessionLimit()">
-        <span data-i18n="limit_set">Set Limit</span>
-      </button>
-      <button class="limit-btn-skip" onclick="skipSessionLimit()">
-        <span data-i18n="limit_skip">No Thanks</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     LIMIET BEREIKT MODAL
-══════════════════════════════════════════ -->
-<div id="limitReachedModal" class="limit-reached-modal">
-  <div class="limit-reached-inner">
-    <h2>⛔ <span data-i18n="limit_reached_title">Spending Limit Reached</span></h2>
-    <p id="limitReachedText" data-i18n="limit_reached_desc">You have reached your session spending limit.</p>
-    <div class="limit-reached-btn-row">
-      <button class="btn-raise-limit" onclick="raiseLimitAction()">
-        📈 <span data-i18n="limit_raise">Raise My Limit</span>
-      </button>
-      <button class="btn-collect-limit" onclick="collectAndClose()">
-        💰 <span data-i18n="limit_collect">Collect My Winnings</span>
-      </button>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
-
-
 <!-- INFO KNOP -->
 <button class="info-btn" onclick="document.getElementById('infoModal').classList.add('visible')">ℹ️</button>
 
@@ -2028,5 +1723,6 @@ function raiseLimitAction() {
     <button class="info-close" onclick="document.getElementById('infoModal').classList.remove('visible')">Close</button>
   </div>
 </div>
+
 </body>
 </html>
