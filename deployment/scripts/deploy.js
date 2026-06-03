@@ -147,16 +147,19 @@ async function main() {
   console.log(`║  LuksoFairNFT: ${nftAddr}  ║`);
   console.log(`║  LUKSOFair:    ${fairAddr}  ║`);
   console.log("╠══════════════════════════════════════════════════════════╣");
-  console.log("║  VOLGENDE STAPPEN:                                        ║");
-  console.log("║  1. Update contractadressen in index.html of              ║");
-  console.log("║     index-testnet.html                                    ║");
-  console.log("║  2. Stuur startinleg naar het LUKSOFair contract:         ║");
-  console.log("║     - 100 sLYX                                            ║");
-  console.log("║     - 200.000 PHLAME                                      ║");
-  console.log("║     - 5.000 AGENTPO                                       ║");
-  console.log("║  3. Roep recordDeposit() aan (no-rugpull)                 ║");
-  console.log("║  4. Stel Gelato keeper in via setGelatoKeeper()           ║");
-  console.log("║  5. Stel metadata JSON CID in via nftContract.setMetadata ║");
+  console.log("║  VOLGENDE STAPPEN (TESTNET):                              ║");
+  console.log("║  1. Update contractadressen in index-testnet.html         ║");
+  console.log("║  2. Test de spin functie via de LUKSO mobile app          ║");
+  console.log("║                                                            ║");
+  console.log("║  STATUS MAINNET (al gedaan):                              ║");
+  console.log("║  ✅ Startinleg gestort (150 LYX + sLYX + PHLAME + AGENTPO║");
+  console.log("║  ✅ recordDeposit() aangeroepen                           ║");
+  console.log("║  ✅ 840 SPIN tokens gemint en verdeeld                    ║");
+  console.log("║  ✅ NFT metadata ingesteld op Pinata                      ║");
+  console.log("║                                                            ║");
+  console.log("║  TODO voor mainnet live:                                  ║");
+  console.log("║  - DEMO_MODE: false in index.html                         ║");
+  console.log("║  - Gelato keeper instellen via setGelatoKeeper()          ║");
   console.log("╚══════════════════════════════════════════════════════════╝\n");
 
   // Sla adressen op in een bestand voor gemakkelijke referentie
