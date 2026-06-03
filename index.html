@@ -383,15 +383,23 @@ details.pw[open] summary::after{content:'▲'}
       <span>LYX</span>
     </div>
     <!-- SPIN token sectie -->
-    <div id="spinTokenDiv" style="display:none;margin-bottom:14px;padding:12px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:12px;color:#2ecc71;font-weight:700">🎟️ SPIN Tokens</span>
-        <span id="spinBalTxt" style="font-size:12px;color:#2ecc71"></span>
+    <div id="spinTokenDiv" style="display:none;margin-bottom:14px;padding:12px;
+      background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;color:#2ecc71;font-weight:700">🎟️ SPIN Tokens</span>
+        <span id="spinBalTxt" style="font-size:12px;color:#2ecc71;font-weight:700"></span>
       </div>
-      <button onclick="redeemSpinTokens()" id="btnRedeem"
-        style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#0e4a28,#2ecc71);color:#fff;font-size:13px;font-weight:700;cursor:pointer">
-        🎟️ <span id="redeemTxt">Use SPIN tokens for free spins</span>
-      </button>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;
+        background:rgba(46,204,113,0.06);border-radius:8px">
+        <input type="checkbox" id="useSpinTokens" onchange="toggleSpinTokens()"
+          style="width:18px;height:18px;accent-color:#2ecc71;cursor:pointer">
+        <div>
+          <div style="font-size:13px;color:#e8d8ff;font-weight:600" id="spinCheckLabel">
+            Add free spins to this session
+          </div>
+          <div style="font-size:11px;color:#7a6a99" id="spinCheckSub"></div>
+        </div>
+      </label>
     </div>
 
     <button class="btn-start" id="btnStart" onclick="startSession()" disabled>
@@ -705,13 +713,10 @@ async function onConnected(addr) {
   }catch(e){}
   fetchProfile(addr);
 
-  // Check SPIN token saldo en actieve sessie
-  if(!CFG.DEMO) {
-    await Promise.all([
-      checkExistingSession(),
-      fetchSpinTokenBalance(),
-    ]);
-  }
+  // Check SPIN token saldo altijd (ook in demo mode — alleen lezen)
+  await fetchSpinTokenBalance();
+  // Check actieve sessie alleen op chain
+  if(!CFG.DEMO) await checkExistingSession();
 
   updateUI();
   document.getElementById('bSpin').disabled=false;
@@ -759,6 +764,21 @@ async function fetchSpinTokenBalance() {
         `${ST.spinTokenBalance} tokens = ${spinsAvail} free spins`;
     }
   } catch(e) { console.warn('fetchSpinTokenBalance:', e); }
+}
+
+function toggleSpinTokens() {
+  const checked = document.getElementById('useSpinTokens').checked;
+  const spins = ST.spinTokenBalance * 10;
+  if(checked) {
+    ST.pendingFreeSpins = spins;
+    const btn = document.getElementById('btnStart');
+    if(btn.disabled === false || _selBudget > 0) {
+      btn.textContent = `Sign & Start (+ ${spins} free spins)`;
+    }
+  } else {
+    ST.pendingFreeSpins = 0;
+    if(_selBudget > 0) selBudget(_selBudget); // reset knop tekst
+  }
 }
 
 async function redeemSpinTokens() {
@@ -838,6 +858,11 @@ function selBudget(val) {
 }
 
 async function startSession() {
+  // Wissel SPIN tokens in als checkbox aangevinkt
+  if(document.getElementById('useSpinTokens')?.checked && ST.spinTokenBalance > 0 && !CFG.DEMO) {
+    await redeemSpinTokens();
+  }
+
   if(CFG.DEMO){
     // Demo: genereer lokale seed
     ST.sessionSeed=BigInt(Math.floor(Math.random()*Number.MAX_SAFE_INTEGER));
@@ -847,6 +872,8 @@ async function startSession() {
     ST.sessionResults=[];
     ST.sessionActive=true;
     document.getElementById('sModal').classList.remove('open');
+    const cb2 = document.getElementById('useSpinTokens');
+    if(cb2) cb2.checked = false;
     updateSessionUI();
     showMsg('🎮 Demo session started!','info');
     return;
@@ -889,6 +916,9 @@ async function startSession() {
     ST.sessionActive=true;
 
     document.getElementById('sModal').classList.remove('open');
+    // Reset checkbox
+    const cb = document.getElementById('useSpinTokens');
+    if(cb) cb.checked = false;
     updateSessionUI();
     showMsg('✅ Session started! Spin away!','info');
     document.getElementById('emergDiv').style.display='block';
