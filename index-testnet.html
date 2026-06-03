@@ -944,7 +944,12 @@ async function collectSession() {
       ST.balance=parseFloat((parseInt(b,16)/1e18).toFixed(3));
     }catch(e){}
 
-    showMsg('✅ Winnings collected!','win');
+    // Refresh saldo en toon verschil
+    const balBefore = ST.balance;
+    await refreshBalance();
+    const diff = (ST.balance - balBefore).toFixed(3);
+    const diffTxt = diff > 0 ? ` (+${diff} LYX refund)` : '';
+    showMsg('✅ Winnings collected!' + diffTxt,'win');
     document.getElementById('emergDiv').style.display='none';
     resetStats();
     endSessionUI();
@@ -1011,6 +1016,16 @@ async function newSession() {
   
   endSessionUI();
   setTimeout(()=>document.getElementById('sModal').classList.add('open'),600);
+}
+
+async function refreshBalance() {
+  try {
+    const p = ST.upProvider || getProvider();
+    if(!p || !ST.address) return;
+    const b = await p.request({method:'eth_getBalance', params:[ST.address,'latest']});
+    ST.balance = parseFloat((parseInt(b,16)/1e18).toFixed(3));
+    document.getElementById('pBal').textContent = ST.balance.toFixed(2) + ' LYX';
+  } catch(e) { console.warn('refreshBalance:', e); }
 }
 
 function resetStats() {
