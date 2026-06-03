@@ -914,6 +914,7 @@ async function collectSession() {
 
   if(CFG.DEMO){
     showMsg('✅ Demo: prizes collected!','info');
+    resetStats();
     endSessionUI();
     return;
   }
@@ -945,6 +946,7 @@ async function collectSession() {
 
     showMsg('✅ Winnings collected!','win');
     document.getElementById('emergDiv').style.display='none';
+    resetStats();
     endSessionUI();
 
   }catch(e){
@@ -1009,6 +1011,12 @@ async function newSession() {
   
   endSessionUI();
   setTimeout(()=>document.getElementById('sModal').classList.add('open'),600);
+}
+
+function resetStats() {
+  ST.statSpins=0; ST.statWins=0; ST.statSLYX=0;
+  ST.statPHL=0; ST.statAGT=0; ST.statNFT=0;
+  updateStats();
 }
 
 function endSessionUI() {
