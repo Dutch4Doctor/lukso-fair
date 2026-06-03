@@ -782,7 +782,7 @@ function toggleSpinTokens() {
   }
 }
 
-async function redeemSpinTokens() {
+async function redeemSpinTokens(tokensToUse) {
   if(!ST.address || ST.spinTokenBalance <= 0) return;
   
   const p = getProvider();
@@ -798,7 +798,7 @@ async function redeemSpinTokens() {
     const tx = await spin.transfer(
       ST.address,
       CFG.SM,  // Naar SessionManager
-      BigInt(ST.spinTokenBalance),
+      BigInt(tokensToUse || ST.spinTokenBalance),
       true,
       "0x",
       {gasLimit: 200000}
@@ -806,9 +806,11 @@ async function redeemSpinTokens() {
     await tx.wait();
     hideTx();
     
-    const freeSpins = ST.spinTokenBalance * 10;
-    ST.spinTokenBalance = 0;
-    document.getElementById('spinTokenDiv').style.display = 'none';
+    const freeSpins = (tokensToUse || ST.spinTokenBalance) * 10;
+    ST.spinTokenBalance -= (tokensToUse || ST.spinTokenBalance);
+    if(ST.spinTokenBalance <= 0) {
+      document.getElementById('spinTokenDiv').style.display = 'none';
+    }
     
     // Voeg gratis spins toe aan sessie budget selectie
     ST.pendingFreeSpins = (ST.pendingFreeSpins || 0) + freeSpins;
@@ -851,17 +853,32 @@ function selBudget(val) {
   document.querySelectorAll('.bopt').forEach(e=>e.classList.remove('sel'));
   const idx=[0.5,1,2,5].indexOf(val);
   if(idx>=0) document.querySelectorAll('.bopt')[idx]?.classList.add('sel');
-  document.getElementById('btnStart').disabled=_selBudget<0.1;
-  const spins=Math.floor(_selBudget/CFG.SPIN_COST);
-  document.getElementById('btnStart').textContent=_selBudget>0
-    ?`${t('sm_sign')} (${spins} spins)`
-    :t('sm_sign');
+  updateStartBtn();
+}
+
+function updateStartBtn() {
+  const spinChecked = document.getElementById('useSpinTokens')?.checked;
+  const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value||'0');
+  const freeSpins = tokensToUse * 10;
+  const hasLYX = _selBudget >= 0.1;
+  const hasFreeSpins = spinChecked && tokensToUse > 0;
+  
+  const btn = document.getElementById('btnStart');
+  btn.disabled = !hasLYX && !hasFreeSpins;
+  
+  const lyx = hasLYX ? Math.floor(_selBudget/CFG.SPIN_COST) + ' spins' : '';
+  const free = hasFreeSpins ? `+ ${freeSpins} free spins` : '';
+  const parts = [lyx, free].filter(Boolean).join(' ');
+  btn.textContent = parts ? `${t('sm_sign')} (${parts})` : t('sm_sign');
 }
 
 async function startSession() {
-  // Wissel SPIN tokens in als checkbox aangevinkt
-  if(document.getElementById('useSpinTokens')?.checked && ST.spinTokenBalance > 0 && !CFG.DEMO) {
-    await redeemSpinTokens();
+  // Stel pendingFreeSpins in op basis van geselecteerde tokens
+  const spinChecked = document.getElementById('useSpinTokens')?.checked;
+  const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value || '0');
+  if(spinChecked && tokensToUse > 0) {
+    ST.pendingFreeSpins = tokensToUse * 10;
+    if(!CFG.DEMO) await redeemSpinTokens(tokensToUse);
   }
 
   if(CFG.DEMO){
