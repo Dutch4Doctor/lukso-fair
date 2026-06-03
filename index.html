@@ -840,6 +840,23 @@ function selBudget(val) {
   updateStartBtn();
 }
 
+function adjustTokens(delta) {
+  const input = document.getElementById('spinTokenCount');
+  if(!input) return;
+  const max = Math.min(ST.spinTokenBalance, 10);
+  let val = parseInt(input.value || '0') + delta;
+  val = Math.max(0, Math.min(val, max));
+  input.value = val;
+  onTokenCountChange();
+}
+
+function onTokenCountChange() {
+  const val = parseInt(document.getElementById('spinTokenCount')?.value || '0');
+  const sub = document.getElementById('spinCountSub');
+  if(sub) sub.textContent = val > 0 ? `= ${val * 10} free spins` : '';
+  updateStartBtn();
+}
+
 function updateStartBtn() {
   const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value || '0');
   const freeSpins = tokensToUse * 10;
