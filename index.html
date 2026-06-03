@@ -748,9 +748,10 @@ async function fetchProfile(addr) {
 }
 
 async function fetchSpinTokenBalance() {
-  if(!ST.address || CFG.DEMO) return;
+  if(!ST.address) return;
   try {
-    const rpc = new ethers.JsonRpcProvider(CFG.RPC);
+    // Altijd mainnet RPC voor SPIN token check
+    const rpc = new ethers.JsonRpcProvider('https://rpc.mainnet.lukso.network');
     const spin = new ethers.Contract(CFG.SPIN_TOKEN, SPIN_ABI, rpc);
     const bal = await spin.balanceOf(ST.address);
     ST.spinTokenBalance = Number(bal);
@@ -763,7 +764,7 @@ async function fetchSpinTokenBalance() {
       document.getElementById('spinBalTxt').textContent = 
         `${ST.spinTokenBalance} tokens = ${spinsAvail} free spins`;
     }
-  } catch(e) { console.warn('fetchSpinTokenBalance:', e); }
+  } catch(e) { console.warn('fetchSpinTokenBalance:', e.message); }
 }
 
 function toggleSpinTokens() {
