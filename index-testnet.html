@@ -297,9 +297,7 @@ details.pw[open] summary::after{content:'▲'}
           𝕏 <span id="elTweet">Share</span>
         </button>
       </div>
-      <button class="btn-sm btn-emergency" id="bEmerg" onclick="emergencyWithdraw()" style="display:none">
-        ⚠️ <span id="elEmerg">Withdraw funds (emergency)</span>
-      </button>
+
     </div>
 
     <!-- Stats -->
@@ -313,6 +311,13 @@ details.pw[open] summary::after{content:'▲'}
         <div class="sstat"><span class="si">🤖</span><div><div class="sl">AGENTPO</div><div class="sv" id="svAGT">0</div></div></div>
         <div class="sstat"><span class="si">🖼️</span><div><div class="sl">NFTs</div><div class="sv" id="svNFT">0</div></div></div>
       </div>
+    </div>
+
+    <!-- Emergency withdraw -->
+    <div id="emergDiv" style="display:none;margin:0 12px 6px">
+      <button class="btn-sm btn-emergency" id="bEmerg" onclick="emergencyWithdraw()" style="width:100%;padding:10px">
+        ⚠️ <span id="elEmerg">Withdraw funds (emergency)</span>
+      </button>
     </div>
 
     <!-- Uitbetaaltabel -->
@@ -462,6 +467,7 @@ const ST = {
   sessionSpinIndex:0,
   sessionResults:[],   // {r1,r2,r3,prizeType} per spin
   sessionFreeSpins:0,  // gratis spins gewonnen tijdens sessie
+  freeSpinsUsed:0,    // al gebruikte gratis spins (voorkomt dubbel tellen)
   // Stats
   statSpins:0, statWins:0, statSLYX:0, statPHL:0, statAGT:0, statNFT:0,
   // Geselecteerd budget
@@ -726,7 +732,7 @@ async function checkExistingSession() {
       ST.sessionSpinsAvailable=Number(spinsAvail);
       ST.sessionSpinIndex=0; // Speler herstart UI, contract bewaart staat
       showMsg('✅ Session restored!','info');
-      document.getElementById('bEmerg').style.display='block';
+      document.getElementById('emergDiv').style.display='block';
     }
   }catch(e){console.warn('checkExistingSession:',e);}
 }
@@ -800,7 +806,7 @@ async function startSession() {
     document.getElementById('sModal').classList.remove('open');
     updateSessionUI();
     showMsg('✅ Session started! Spin away!','info');
-    document.getElementById('bEmerg').style.display='block';
+    document.getElementById('emergDiv').style.display='block';
 
   }catch(e){
     hideTx();
@@ -867,9 +873,29 @@ async function doSpin() {
 
   updateStats();
 
-  // Sessie op?
+  // Sessie op? Check ook free spins
   if(ST.sessionSpinIndex>=ST.sessionSpinsAvailable){
-    setTimeout(()=>document.getElementById('lrModal').classList.add('open'),1500);
+    // Tel gratis spins die gewonnen zijn tijdens sessie
+    const freeWon = ST.sessionResults
+      .filter(r=>[9,10,12].includes(r.prizeType))
+      .reduce((sum,r)=>{
+        if(r.prizeType===9) return sum+5;
+        if(r.prizeType===10) return sum+3;
+        if(r.prizeType===12) return sum+1;
+        return sum;
+      },0);
+    
+    if(freeWon > ST.freeSpinsUsed) {
+      // Nog gratis spins beschikbaar — voeg ze toe aan sessie
+      const extraSpins = freeWon - ST.freeSpinsUsed;
+      ST.sessionSpinsAvailable += extraSpins;
+      ST.freeSpinsUsed = freeWon;
+      updateSessionUI();
+      showMsg(`🎟️ ${extraSpins} free spin(s) added!`, 'win');
+    } else {
+      // Echt geen spins meer
+      setTimeout(()=>document.getElementById('lrModal').classList.add('open'),1500);
+    }
   }
 }
 
@@ -918,7 +944,7 @@ async function collectSession() {
     }catch(e){}
 
     showMsg('✅ Winnings collected!','win');
-    document.getElementById('bEmerg').style.display='none';
+    document.getElementById('emergDiv').style.display='none';
     endSessionUI();
 
   }catch(e){
@@ -948,7 +974,7 @@ async function emergencyWithdraw() {
     }catch(e){}
 
     showMsg('✅ Funds withdrawn!','info');
-    document.getElementById('bEmerg').style.display='none';
+    document.getElementById('emergDiv').style.display='none';
     endSessionUI();
   }catch(e){
     hideTx();
@@ -956,10 +982,33 @@ async function emergencyWithdraw() {
   }
 }
 
-function newSession() {
+async function newSession() {
   document.getElementById('lrModal').classList.remove('open');
+  
+  // Collect vorige sessie eerst als er spins gespeeld zijn
+  if(ST.sessionActive && ST.sessionSpinIndex > 0 && !CFG.DEMO) {
+    showTx('Collecting previous session...');
+    try{
+      const p=getProvider();
+      const ep=new ethers.BrowserProvider(p);
+      const signer=await ep.getSigner();
+      const sm=new ethers.Contract(CFG.SM,SM_ABI,signer);
+      const prizeArr=ST.sessionResults.map(r=>r.prizeType);
+      const tx=await sm.collectSession(ST.sessionSpinIndex,prizeArr,{gasLimit:500000});
+      await tx.wait();
+      hideTx();
+      showMsg('✅ Previous session collected!','info');
+    }catch(e){
+      hideTx();
+      showMsg('⚠️ Could not collect previous session: '+(e.reason||e.message||'').slice(0,60),'warn');
+      // Toch doorgaan — speler kan emergency withdraw gebruiken
+    }
+  } else if(CFG.DEMO) {
+    showMsg('🎮 Demo: previous prizes counted','info');
+  }
+  
   endSessionUI();
-  setTimeout(()=>document.getElementById('sModal').classList.add('open'),300);
+  setTimeout(()=>document.getElementById('sModal').classList.add('open'),600);
 }
 
 function endSessionUI() {
