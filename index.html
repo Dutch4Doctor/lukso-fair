@@ -390,11 +390,11 @@ details.pw[open] summary::after{content:'▲'}
         <span id="spinBalTxt" style="font-size:12px;color:#2ecc71;font-weight:700"></span>
       </div>
       <div style="font-size:11px;color:#7a6a99;margin-bottom:10px">Tokens to use this session (1 token = 10 free spins):</div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button onclick="adjustTokens(-1)" style="width:40px;height:40px;border:1px solid rgba(46,204,113,0.5);border-radius:10px;background:rgba(46,204,113,0.1);color:#2ecc71;font-size:22px;cursor:pointer;flex-shrink:0">−</button>
+      <div style="display:grid;grid-template-columns:44px 1fr 44px;gap:8px;align-items:center">
+        <button onclick="adjustTokens(-1)" style="height:44px;border:1px solid rgba(46,204,113,0.5);border-radius:10px;background:rgba(46,204,113,0.1);color:#2ecc71;font-size:22px;cursor:pointer">−</button>
         <input type="number" id="spinTokenCount" value="0" min="0" oninput="onTokenCountChange()"
-          style="flex:1;text-align:center;background:rgba(255,255,255,0.07);border:1px solid rgba(46,204,113,0.4);border-radius:10px;color:#e8d8ff;padding:8px;font-size:20px;font-weight:700">
-        <button onclick="adjustTokens(1)" style="width:40px;height:40px;border:1px solid rgba(46,204,113,0.5);border-radius:10px;background:rgba(46,204,113,0.1);color:#2ecc71;font-size:22px;cursor:pointer;flex-shrink:0">+</button>
+          style="width:100%;text-align:center;background:rgba(255,255,255,0.07);border:1px solid rgba(46,204,113,0.4);border-radius:10px;color:#e8d8ff;padding:8px;font-size:20px;font-weight:700">
+        <button onclick="adjustTokens(1)" style="height:44px;border:1px solid rgba(46,204,113,0.5);border-radius:10px;background:rgba(46,204,113,0.1);color:#2ecc71;font-size:22px;cursor:pointer">+</button>
       </div>
       <div id="spinCountSub" style="font-size:12px;color:#2ecc71;text-align:center;margin-top:6px;font-weight:600"></div>
     </div>
