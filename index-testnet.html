@@ -383,6 +383,18 @@ details.pw[open] summary::after{content:'▲'}
              placeholder="Custom (max 10 LYX)" oninput="selBudget(parseFloat(this.value))">
       <span>LYX</span>
     </div>
+    <!-- SPIN token sectie -->
+    <div id="spinTokenDiv" style="display:none;margin-bottom:14px;padding:12px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;color:#2ecc71;font-weight:700">🎟️ SPIN Tokens</span>
+        <span id="spinBalTxt" style="font-size:12px;color:#2ecc71"></span>
+      </div>
+      <button onclick="redeemSpinTokens()" id="btnRedeem"
+        style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#0e4a28,#2ecc71);color:#fff;font-size:13px;font-weight:700;cursor:pointer">
+        🎟️ <span id="redeemTxt">Use SPIN tokens for free spins</span>
+      </button>
+    </div>
+
     <button class="btn-start" id="btnStart" onclick="startSession()" disabled>
       <span id="btnStartTxt">Sign & Start</span>
     </button>
@@ -433,6 +445,12 @@ const CFG = {
   SESSION_TIMEOUT: 24 * 60 * 60 * 1000, // 24 uur in ms
 };
 
+const SPIN_ABI = [
+  "function balanceOf(address account) external view returns (uint256)",
+  "function transfer(address from, address to, uint256 amount, bool allowNonLSP1Recipient, bytes memory data) external",
+  "function authorizeOperator(address operator, uint256 amount, bytes memory operatorNotificationData) external",
+];
+
 const SM_ABI = [
   "function startSession() external payable",
   "function collectSession(uint256 spinsPlayed, uint8[] calldata prizeTypes) external",
@@ -468,6 +486,7 @@ const ST = {
   sessionResults:[],   // {r1,r2,r3,prizeType} per spin
   sessionFreeSpins:0,  // gratis spins gewonnen tijdens sessie
   freeSpinsUsed:0,    // al gebruikte gratis spins (voorkomt dubbel tellen)
+  spinTokenBalance:0, // aantal SPIN tokens in wallet
   // Stats
   statSpins:0, statWins:0, statSLYX:0, statPHL:0, statAGT:0, statNFT:0,
   // Geselecteerd budget
@@ -687,8 +706,13 @@ async function onConnected(addr) {
   }catch(e){}
   fetchProfile(addr);
 
-  // Check of er een actieve sessie is
-  if(!CFG.DEMO) await checkExistingSession();
+  // Check SPIN token saldo en actieve sessie
+  if(!CFG.DEMO) {
+    await Promise.all([
+      checkExistingSession(),
+      fetchSpinTokenBalance(),
+    ]);
+  }
 
   updateUI();
   document.getElementById('bSpin').disabled=false;
@@ -717,6 +741,68 @@ async function fetchProfile(addr) {
   }catch(e){}
   ST.profileName=ST.profileName||shortenAddr(ST.address);
   updateProfileUI();
+}
+
+async function fetchSpinTokenBalance() {
+  if(!ST.address || CFG.DEMO) return;
+  try {
+    const rpc = new ethers.JsonRpcProvider(CFG.RPC);
+    const spin = new ethers.Contract(CFG.SPIN_TOKEN, SPIN_ABI, rpc);
+    const bal = await spin.balanceOf(ST.address);
+    ST.spinTokenBalance = Number(bal);
+    
+    // Toon/verberg SPIN token sectie in modal
+    const div = document.getElementById('spinTokenDiv');
+    if(div) {
+      div.style.display = ST.spinTokenBalance > 0 ? 'block' : 'none';
+      const spinsAvail = ST.spinTokenBalance * 10;
+      document.getElementById('spinBalTxt').textContent = 
+        `${ST.spinTokenBalance} tokens = ${spinsAvail} free spins`;
+    }
+  } catch(e) { console.warn('fetchSpinTokenBalance:', e); }
+}
+
+async function redeemSpinTokens() {
+  if(!ST.address || ST.spinTokenBalance <= 0) return;
+  
+  const p = getProvider();
+  const ep = new ethers.BrowserProvider(p);
+  const signer = await ep.getSigner();
+  const spin = new ethers.Contract(CFG.SPIN_TOKEN, SPIN_ABI, signer);
+  
+  showTx('Redeeming SPIN tokens...');
+  try {
+    // Stuur tokens naar SessionManager — die geeft free spins terug
+    // Voor nu: stuur naar LUKSO Fair UP adres als bewijs van inwisseling
+    // SessionManager telt ze automatisch als extra spins bij startSession
+    const tx = await spin.transfer(
+      ST.address,
+      CFG.SM,  // Naar SessionManager
+      BigInt(ST.spinTokenBalance),
+      true,
+      "0x",
+      {gasLimit: 200000}
+    );
+    await tx.wait();
+    hideTx();
+    
+    const freeSpins = ST.spinTokenBalance * 10;
+    ST.spinTokenBalance = 0;
+    document.getElementById('spinTokenDiv').style.display = 'none';
+    
+    // Voeg gratis spins toe aan sessie budget selectie
+    ST.pendingFreeSpins = (ST.pendingFreeSpins || 0) + freeSpins;
+    showMsg(`✅ ${freeSpins} free spins added to your next session!`, 'win');
+    
+    // Update budget opties om free spins te tonen
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStartTxt').textContent = 
+      `Sign & Start (includes ${freeSpins} free spins)`;
+      
+  } catch(e) {
+    hideTx();
+    showMsg('⚠️ ' + (e.reason || e.shortMessage || e.message || 'Error').slice(0,80), 'warn');
+  }
 }
 
 async function checkExistingSession() {
@@ -819,12 +905,14 @@ async function doSpin() {
   if(!ST.connected){
     // Nog niet verbonden: connect modal
     document.getElementById('sModal').classList.add('open');
+    fetchSpinTokenBalance(); // Refresh saldo bij openen modal
     return;
   }
 
   if(!ST.sessionActive){
     // Sessie starten
     document.getElementById('sModal').classList.add('open');
+    fetchSpinTokenBalance(); // Refresh saldo bij openen modal
     return;
   }
 
