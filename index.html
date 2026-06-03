@@ -769,17 +769,15 @@ async function fetchSpinTokenBalance() {
 
 function toggleSpinTokens() {
   const checked = document.getElementById('useSpinTokens').checked;
-  const spins = ST.spinTokenBalance * 10;
+  const countDiv = document.getElementById('spinCountDiv');
+  if(countDiv) countDiv.style.display = checked ? 'block' : 'none';
   if(checked) {
-    ST.pendingFreeSpins = spins;
-    const btn = document.getElementById('btnStart');
-    if(btn.disabled === false || _selBudget > 0) {
-      btn.textContent = `Sign & Start (+ ${spins} free spins)`;
-    }
+    document.getElementById('spinTokenCount').value = 1;
+    document.getElementById('spinCountSub').textContent = '= 10 free spins';
   } else {
     ST.pendingFreeSpins = 0;
-    if(_selBudget > 0) selBudget(_selBudget); // reset knop tekst
   }
+  updateStartBtn();
 }
 
 async function redeemSpinTokens(tokensToUse) {
