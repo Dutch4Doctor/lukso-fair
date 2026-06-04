@@ -554,6 +554,7 @@ function t(k,a){const d=I18N[ST.lang]||I18N.en;const v=d[k]??I18N.en[k]??k;retur
 function calcSpinResult(seed, spinIndex) {
   // Simuleer keccak256(abi.encodePacked(seed, spinIndex))
   // We gebruiken ethers.solidityPackedKeccak256
+  if(spinIndex === 0) console.log('calcSpin seed:', seed?.toString(), 'type:', typeof seed);
   const rand = BigInt(ethers.solidityPackedKeccak256(
     ['uint256', 'uint256'],
     [seed, BigInt(spinIndex)]
@@ -923,6 +924,7 @@ async function startSession() {
       }catch(e){}
     }
 
+    console.log('Seed type:', typeof seed, 'value:', seed?.toString());
     if(!seed) throw new Error('Seed not found in event');
 
     ST.sessionSeed=seed;
