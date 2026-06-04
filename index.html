@@ -6,7 +6,7 @@
   <title>LUKSO Slots — LUKSO Fair</title>
   <meta name="theme-color" content="#0a0015">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
-  <script src="up-provider.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@lukso/up-provider@0.3.7/dist/client.global.js"></script>
 <style>
 :root {
   --bg:      #0a0015;
@@ -621,11 +621,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function getProvider() {
+  // Probeer window.lukso eerst (LUKSO mobile app)
+  if(window.lukso) return window.lukso;
+  // Probeer UP provider CDN
   try {
-    if(typeof UpProvider!=='undefined'&&UpProvider.createClientUPProvider)
-      return UpProvider.createClientUPProvider();
-  } catch(e){}
-  return window.lukso||window.ethereum||null;
+    if(typeof UpProvider!=='undefined') {
+      if(UpProvider.createClientUPProvider) return UpProvider.createClientUPProvider();
+      if(typeof UpProvider === 'function') return UpProvider();
+    }
+  } catch(e){ console.warn('UP provider error:', e); }
+  // Fallback
+  return window.ethereum||null;
 }
 
 function setLang(l) {
