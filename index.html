@@ -1399,7 +1399,7 @@ function confetti(n=20){
 function buildPayout(){
   // Bouw IMGS lookup op basis van SYMBOL_DATA keys
   const IMGS = {};
-  (SYMBOL_DATA||[]).forEach(s => IMGS[s.key] = s.img);
+  (SYMBOLS||[]).forEach(s => IMGS[s.key] = s.img);
   function img(key){ 
     return IMGS[key] ? `<img src="${IMGS[key]}" style="width:32px;height:32px;object-fit:contain;vertical-align:middle;border-radius:6px;margin-right:4px;">` : ''; 
   }
