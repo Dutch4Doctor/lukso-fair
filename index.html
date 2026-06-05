@@ -708,10 +708,14 @@ async function onConnected(addr) {
   }catch(e){}
   fetchProfile(addr);
 
-  // Check SPIN token saldo altijd (ook in demo mode — alleen lezen)
   await fetchSpinTokenBalance();
-  // Check actieve sessie alleen op chain
-  if(!CFG.DEMO) await checkExistingSession();
+  if(restoreSession()) {
+    showMsg('✅ Session restored!', 'info');
+    updateSessionUI(); updateStats();
+    document.getElementById('emergDiv').style.display = 'block';
+  } else if(!CFG.DEMO) {
+    await checkExistingSession();
+  }
 
   updateUI();
   document.getElementById('bSpin').disabled=false;
@@ -854,6 +858,50 @@ function onTokenCountChange() {
   if(sub) sub.textContent = val > 0 ? `= ${val * 10} free spins` : '';
   updateStartBtn();
 }
+
+// ── SESSIE PERSISTENTIE ─────────────────────────────────────
+function saveSession() {
+  if(!ST.sessionActive || !ST.sessionSeed) return;
+  try {
+    sessionStorage.setItem('lukso_session', JSON.stringify({
+      seed: ST.sessionSeed.toString(),
+      budget: ST.sessionBudget,
+      spinsAvailable: ST.sessionSpinsAvailable,
+      spinIndex: ST.sessionSpinIndex,
+      results: ST.sessionResults,
+      freeSpinsUsed: ST.freeSpinsUsed || 0,
+      address: ST.address,
+      statSpins: ST.statSpins, statWins: ST.statWins,
+      statLYX: ST.statLYX, statSLYX: ST.statSLYX,
+      statPHL: ST.statPHL, statAGT: ST.statAGT, statNFT: ST.statNFT,
+    }));
+  } catch(e) {}
+}
+
+function restoreSession() {
+  try {
+    const raw = sessionStorage.getItem('lukso_session');
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d.seed || !d.address) return false;
+    if(ST.address && d.address.toLowerCase() !== ST.address.toLowerCase()) {
+      sessionStorage.removeItem('lukso_session'); return false;
+    }
+    ST.sessionSeed = BigInt(d.seed);
+    ST.sessionBudget = d.budget;
+    ST.sessionSpinsAvailable = d.spinsAvailable;
+    ST.sessionSpinIndex = d.spinIndex;
+    ST.sessionResults = d.results || [];
+    ST.freeSpinsUsed = d.freeSpinsUsed || 0;
+    ST.sessionActive = true;
+    ST.statSpins=d.statSpins||0; ST.statWins=d.statWins||0;
+    ST.statLYX=d.statLYX||0; ST.statSLYX=d.statSLYX||0;
+    ST.statPHL=d.statPHL||0; ST.statAGT=d.statAGT||0; ST.statNFT=d.statNFT||0;
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearSession() { sessionStorage.removeItem('lukso_session'); }
 
 function updateStartBtn() {
   const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value || '0');
@@ -1007,7 +1055,8 @@ async function doSpin() {
   }
 
   updateStats();
-  updateSessionUI(); // Refresh spin dots na prize
+  updateSessionUI();
+  saveSession(); // Bewaar na elke spin
 
   // Sessie op? Check ook free spins
   if(ST.sessionSpinIndex>=ST.sessionSpinsAvailable){
@@ -1053,8 +1102,7 @@ async function collectSession() {
 
   if(CFG.DEMO){
     showMsg('✅ Demo: prizes collected!','info');
-    resetStats();
-    endSessionUI();
+    clearSession(); resetStats(); endSessionUI();
     return;
   }
 
@@ -1090,8 +1138,7 @@ async function collectSession() {
     const diffTxt = diff > 0 ? ` (+${diff} LYX refund)` : '';
     showMsg('✅ Winnings collected!' + diffTxt,'win');
     document.getElementById('emergDiv').style.display='none';
-    resetStats();
-    endSessionUI();
+    clearSession(); resetStats(); endSessionUI();
 
   }catch(e){
     hideTx();
