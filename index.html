@@ -863,7 +863,7 @@ function onTokenCountChange() {
 function saveSession() {
   if(!ST.sessionActive || !ST.sessionSeed) return;
   try {
-    sessionStorage.setItem('lukso_session', JSON.stringify({
+    localStorage.setItem('lukso_session', JSON.stringify({
       seed: ST.sessionSeed.toString(),
       budget: ST.sessionBudget,
       spinsAvailable: ST.sessionSpinsAvailable,
@@ -880,12 +880,12 @@ function saveSession() {
 
 function restoreSession() {
   try {
-    const raw = sessionStorage.getItem('lukso_session');
+    const raw = localStorage.getItem('lukso_session');
     if(!raw) return false;
     const d = JSON.parse(raw);
     if(!d.seed || !d.address) return false;
     if(ST.address && d.address.toLowerCase() !== ST.address.toLowerCase()) {
-      sessionStorage.removeItem('lukso_session'); return false;
+      localStorage.removeItem('lukso_session'); return false;
     }
     ST.sessionSeed = BigInt(d.seed);
     ST.sessionBudget = d.budget;
@@ -901,7 +901,7 @@ function restoreSession() {
   } catch(e) { return false; }
 }
 
-function clearSession() { sessionStorage.removeItem('lukso_session'); }
+function clearSession() { localStorage.removeItem('lukso_session'); }
 
 function updateStartBtn() {
   const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value || '0');
