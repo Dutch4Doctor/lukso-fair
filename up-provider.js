@@ -1,24 +1,4 @@
 "use strict";
-// Browser crypto polyfill
-var __require = function(mod) {
-  if (mod === "crypto") {
-    return {
-      randomBytes: function(n) {
-        var arr = new Uint8Array(n);
-        crypto.getRandomValues(arr);
-        return arr;
-      },
-      createHash: function(alg) {
-        return {
-          update: function(data) { this._data = data; return this; },
-          digest: function(enc) { return ''; }
-        };
-      }
-    };
-  }
-  throw new Error("Cannot require: " + mod);
-};
-
 var UpProvider = (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
@@ -540,8 +520,8 @@ var UpProvider = (() => {
   var require_supports_color = __commonJS({
     "../../node_modules/.pnpm/supports-color@8.1.1/node_modules/supports-color/index.js"(exports, module) {
       "use strict";
-      var os = __require("os");
-      var tty = __require("tty");
+      var os = {};
+      var tty = {};
       var hasFlag = require_has_flag();
       var { env } = process;
       var flagForceColor;
@@ -654,8 +634,8 @@ var UpProvider = (() => {
   var require_node = __commonJS({
     "../../node_modules/.pnpm/debug@4.4.3/node_modules/debug/src/node.js"(exports, module) {
       "use strict";
-      var tty = __require("tty");
-      var util = __require("util");
+      var tty = {};
+      var util = {};
       exports.init = init;
       exports.log = log;
       exports.formatArgs = formatArgs;
@@ -1986,7 +1966,7 @@ var UpProvider = (() => {
   }
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/rng.js
-  var import_node_crypto = { randomBytes: (n) => { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; } };
+  var import_node_crypto = { randomFillSync: (b) => { crypto.getRandomValues(b); return b; }, randomUUID: () => crypto.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{var r=Math.random()*16|0;return(c=="x"?r:r&0x3|0x8).toString(16)}) };
   var rnds8Pool = new Uint8Array(256);
   var poolPtr = rnds8Pool.length;
   function rng() {
@@ -2034,7 +2014,7 @@ var UpProvider = (() => {
   }
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/native.js
-  var import_node_crypto2 = { randomBytes: (n) => { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; } };
+  var import_node_crypto2 = { randomUUID: () => crypto.randomUUID?.() || "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{var r=Math.random()*16|0;return(c=="x"?r:r&0x3|0x8).toString(16)}) };
   var native_default = { randomUUID: import_node_crypto2.randomUUID };
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/v4.js
@@ -2067,7 +2047,7 @@ var UpProvider = (() => {
   var v4_default = v4;
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/sha1.js
-  var import_node_crypto3 = { randomBytes: (n) => { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; } };
+  var import_node_crypto3 = { randomFillSync: (b) => { crypto.getRandomValues(b); return b; } };
   function sha1(bytes) {
     if (Array.isArray(bytes)) {
       bytes = Buffer.from(bytes);
