@@ -6,6 +6,7 @@
   <title>LUKSO Slots — LUKSO Fair</title>
   <meta name="theme-color" content="#0a0015">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+  <script src="up-provider.js"></script>
   <style>
 :root {
   --bg:      #0a0015;
@@ -623,10 +624,48 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// ── PROVIDER SETUP ──────────────────────────────────────────
+// Detecteer of we in een iFrame zitten (Grid) of direct
+const IS_IFRAME = window.self !== window.top;
+let _upProvider = null;
+
 function getProvider() {
-  // window.lukso = LUKSO mobiele app of browser extensie
-  // window.ethereum = fallback voor andere wallets
+  if(_upProvider) return _upProvider;
+  
+  if(IS_IFRAME) {
+    // We zitten in een iFrame (LUKSO Grid)
+    try {
+      if(typeof UpProvider !== 'undefined' && UpProvider.createClientUPProvider) {
+        _upProvider = UpProvider.createClientUPProvider();
+        return _upProvider;
+      }
+    } catch(e) { console.warn('UP Provider iFrame error:', e); }
+  }
+  
+  // Directe verbinding: mobiel of browser extensie
   return window.lukso || window.ethereum || null;
+}
+
+// iFrame: luister naar accountsChanged event voor automatisch verbinden
+if(IS_IFRAME) {
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      const p = getProvider();
+      if(p) {
+        p.on('accountsChanged', async (accounts) => {
+          if(accounts && accounts.length > 0) {
+            await onConnected(accounts[0]);
+          } else {
+            onDisconnected();
+          }
+        });
+        // Vraag huidige accounts op
+        p.request({method: 'eth_accounts'}).then(accs => {
+          if(accs && accs.length > 0) onConnected(accs[0]);
+        }).catch(() => {});
+      }
+    } catch(e) { console.warn('iFrame provider setup:', e); }
+  });
 }
 
 function setLang(l) {
