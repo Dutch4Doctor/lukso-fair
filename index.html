@@ -736,16 +736,28 @@ function disconnectWallet(){onDisconnected();showMsg(t('connect_msg'));}
 
 async function fetchProfile(addr) {
   try{
+    // Probeer eerst de UP naam via LSP3
     const r=await fetch(`https://api.universalprofile.cloud/v1/${addr}`).catch(()=>null);
     if(r&&r.ok){
       const d=await r.json();
       const p=d?.LSP3Profile?.LSP3Profile||d?.LSP3Profile||d;
       if(p?.name) ST.profileName=p.name;
       const imgs=p?.profileImage||[];
-      if(imgs.length){const u=imgs[0]?.url||imgs[0];if(u)ST.profileAvatar=String(u).replace('ipfs://','https://api.universalprofile.cloud/ipfs/');}
+      if(imgs.length){
+        const u=imgs[0]?.url||imgs[0];
+        if(u) ST.profileAvatar=String(u).replace('ipfs://','https://api.universalprofile.cloud/ipfs/');
+      }
+    }
+    // Fallback: probeer via universalprofile.cloud profile API
+    if(!ST.profileName || ST.profileName===shortenAddr(addr)) {
+      const r2=await fetch(`https://universalprofile.cloud/api/profiles/${addr}`).catch(()=>null);
+      if(r2&&r2.ok){
+        const d2=await r2.json();
+        if(d2?.name) ST.profileName=d2.name;
+      }
     }
   }catch(e){}
-  ST.profileName=ST.profileName||shortenAddr(ST.address);
+  ST.profileName=ST.profileName||shortenAddr(addr);
   updateProfileUI();
 }
 
@@ -1080,29 +1092,9 @@ async function doSpin() {
     ST.spinsSinceLastPrize = 0;
   }
 
-  // Sessie op? Check ook free spins
+  // Sessie op? (free spins zijn al direct toegevoegd bij elke win)
   if(ST.sessionSpinIndex>=ST.sessionSpinsAvailable){
-    // Tel gratis spins die gewonnen zijn tijdens sessie
-    const freeWon = ST.sessionResults
-      .filter(r=>[9,10,12].includes(r.prizeType))
-      .reduce((sum,r)=>{
-        if(r.prizeType===9) return sum+5;
-        if(r.prizeType===10) return sum+3;
-        if(r.prizeType===12) return sum+1;
-        return sum;
-      },0);
-    
-    if(freeWon > ST.freeSpinsUsed) {
-      // Nog gratis spins beschikbaar — voeg ze toe aan sessie
-      const extraSpins = freeWon - ST.freeSpinsUsed;
-      ST.sessionSpinsAvailable += extraSpins;
-      ST.freeSpinsUsed = freeWon;
-      updateSessionUI();
-      showMsg(`🎟️ ${extraSpins} free spin(s) added!`, 'win');
-    } else {
-      // Echt geen spins meer
-      setTimeout(()=>document.getElementById('lrModal').classList.add('open'),1500);
-    }
+    setTimeout(()=>document.getElementById('lrModal').classList.add('open'),1500);
   }
 }
 

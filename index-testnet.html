@@ -6,8 +6,7 @@
   <title>LUKSO Slots — LUKSO Fair</title>
   <meta name="theme-color" content="#0a0015">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
-  <script src="up-provider.js"></script>
-<style>
+  <style>
 :root {
   --bg:      #0a0015;
   --panel:   #110022;
@@ -236,7 +235,6 @@ details.pw[open] summary::after{content:'▲'}
 </head>
 <body>
 
-<div class="tbar">⚠️ TESTNET — Use testnet LYX only</div>
 
 <header class="hdr">
   <span class="logo">🎰 LUKSO Slots</span>
@@ -306,6 +304,7 @@ details.pw[open] summary::after{content:'▲'}
       <div class="sgrid">
         <div class="sstat"><span class="si">🎰</span><div><div class="sl" id="elSpins">Spins</div><div class="sv" id="svSpins">0</div></div></div>
         <div class="sstat"><span class="si">🏆</span><div><div class="sl" id="elWins">Wins</div><div class="sv" id="svWins">0</div></div></div>
+        <div class="sstat"><span class="si">💰</span><div><div class="sl">LYX</div><div class="sv" id="svLYX">0</div></div></div>
         <div class="sstat"><span class="si">💎</span><div><div class="sl">sLYX</div><div class="sv" id="svSLYX">0</div></div></div>
         <div class="sstat"><span class="si">🔥</span><div><div class="sl">PHLAME</div><div class="sv" id="svPHL">0</div></div></div>
         <div class="sstat"><span class="si">🤖</span><div><div class="sl">AGENTPO</div><div class="sv" id="svAGT">0</div></div></div>
@@ -386,21 +385,18 @@ details.pw[open] summary::after{content:'▲'}
     <!-- SPIN token sectie -->
     <div id="spinTokenDiv" style="display:none;margin-bottom:14px;padding:12px;
       background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:13px;color:#2ecc71;font-weight:700">🎟️ SPIN Tokens</span>
         <span id="spinBalTxt" style="font-size:12px;color:#2ecc71;font-weight:700"></span>
       </div>
-      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px;
-        background:rgba(46,204,113,0.06);border-radius:8px">
-        <input type="checkbox" id="useSpinTokens" onchange="toggleSpinTokens()"
-          style="width:18px;height:18px;accent-color:#2ecc71;cursor:pointer">
-        <div>
-          <div style="font-size:13px;color:#e8d8ff;font-weight:600" id="spinCheckLabel">
-            Add free spins to this session
-          </div>
-          <div style="font-size:11px;color:#7a6a99" id="spinCheckSub"></div>
-        </div>
-      </label>
+      <div style="font-size:11px;color:#7a6a99;margin-bottom:10px">Tokens to use this session (1 token = 10 free spins):</div>
+      <div style="display:grid;grid-template-columns:44px 1fr 44px;gap:8px;align-items:center">
+        <button onclick="adjustTokens(-1)" style="height:44px;border:1px solid rgba(46,204,113,0.5);border-radius:10px;background:rgba(46,204,113,0.1);color:#2ecc71;font-size:22px;cursor:pointer">−</button>
+        <input type="number" id="spinTokenCount" value="0" min="0" oninput="onTokenCountChange()"
+          style="width:100%;text-align:center;background:rgba(255,255,255,0.07);border:1px solid rgba(46,204,113,0.4);border-radius:10px;color:#e8d8ff;padding:8px;font-size:20px;font-weight:700">
+        <button onclick="adjustTokens(1)" style="height:44px;border:1px solid rgba(46,204,113,0.5);border-radius:10px;background:rgba(46,204,113,0.1);color:#2ecc71;font-size:22px;cursor:pointer">+</button>
+      </div>
+      <div id="spinCountSub" style="font-size:12px;color:#2ecc71;text-align:center;margin-top:6px;font-weight:600"></div>
     </div>
 
     <button class="btn-start" id="btnStart" onclick="startSession()" disabled>
@@ -440,7 +436,7 @@ details.pw[open] summary::after{content:'▲'}
 // ╚══════════════════════════════════════════════════════════════╝
 
 const CFG = {
-  DEMO:         false,
+  DEMO:         false,  // testnet  // Zet op false na mainnet SessionManager deployment
   FAIR:        '0x648B493c1d3bD3Ecc1104Afc810772bcfD16ED84',
   SM:          '0x4Fb09bac5c0e2B934C6bcC2b7f875aC6a910903f', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x68c4D4a28AdF685e380D8A1241988011f0188600',
@@ -496,7 +492,8 @@ const ST = {
   freeSpinsUsed:0,    // al gebruikte gratis spins (voorkomt dubbel tellen)
   spinTokenBalance:0, // aantal SPIN tokens in wallet
   // Stats
-  statSpins:0, statWins:0, statSLYX:0, statPHL:0, statAGT:0, statNFT:0,
+  statSpins:0, statWins:0, statLYX:0, statSLYX:0, statPHL:0, statAGT:0, statNFT:0,
+  spinsSinceLastPrize:0,
   // Geselecteerd budget
   selectedBudget:0,
   // Provider
@@ -594,12 +591,14 @@ function determinePrize(r1, r2, r3, spinIndex) {
   const two = r1===r2||r2===r3;
   if (two) {
     const sym=r1===r2?r1:r2;
-    if(sym<=2) return 11;
-    if(sym<=6) return 8;
-    return 12;
+    if(sym<=2) return 11;  // Common NFT
+    if(sym<=6) return 8;   // LYX klein
+    // sym >= 7: twee bills/coins = geen extra prijs
+    return 0;
   }
-  if (spinIndex>0 && spinIndex%5===4) return 12;
-  return 0;
+  // Troostprijs: alleen als spinIndex % 5 == 4 EN geen prijs in laatste 5 spins
+  // Dit wordt bijgehouden door de frontend via spinsSinceLastPrize
+  return 0; // Frontend voegt consolation toe indien nodig
 }
 
 function prizeMsg(pt) {
@@ -625,11 +624,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function getProvider() {
-  try {
-    if(typeof UpProvider!=='undefined'&&UpProvider.createClientUPProvider)
-      return UpProvider.createClientUPProvider();
-  } catch(e){}
-  return window.lukso||window.ethereum||null;
+  // window.lukso = LUKSO mobiele app of browser extensie
+  // window.ethereum = fallback voor andere wallets
+  return window.lukso || window.ethereum || null;
 }
 
 function setLang(l) {
@@ -715,7 +712,13 @@ async function onConnected(addr) {
   fetchProfile(addr);
 
   await fetchSpinTokenBalance();
-  if(!CFG.DEMO) await checkExistingSession();
+  if(restoreSession()) {
+    showMsg('✅ Session restored!', 'info');
+    updateSessionUI(); updateStats();
+    document.getElementById('emergDiv').style.display = 'block';
+  } else if(!CFG.DEMO) {
+    await checkExistingSession();
+  }
 
   updateUI();
   document.getElementById('bSpin').disabled=false;
@@ -733,23 +736,36 @@ function disconnectWallet(){onDisconnected();showMsg(t('connect_msg'));}
 
 async function fetchProfile(addr) {
   try{
+    // Probeer eerst de UP naam via LSP3
     const r=await fetch(`https://api.universalprofile.cloud/v1/${addr}`).catch(()=>null);
     if(r&&r.ok){
       const d=await r.json();
       const p=d?.LSP3Profile?.LSP3Profile||d?.LSP3Profile||d;
       if(p?.name) ST.profileName=p.name;
       const imgs=p?.profileImage||[];
-      if(imgs.length){const u=imgs[0]?.url||imgs[0];if(u)ST.profileAvatar=String(u).replace('ipfs://','https://api.universalprofile.cloud/ipfs/');}
+      if(imgs.length){
+        const u=imgs[0]?.url||imgs[0];
+        if(u) ST.profileAvatar=String(u).replace('ipfs://','https://api.universalprofile.cloud/ipfs/');
+      }
+    }
+    // Fallback: probeer via universalprofile.cloud profile API
+    if(!ST.profileName || ST.profileName===shortenAddr(addr)) {
+      const r2=await fetch(`https://universalprofile.cloud/api/profiles/${addr}`).catch(()=>null);
+      if(r2&&r2.ok){
+        const d2=await r2.json();
+        if(d2?.name) ST.profileName=d2.name;
+      }
     }
   }catch(e){}
-  ST.profileName=ST.profileName||shortenAddr(ST.address);
+  ST.profileName=ST.profileName||shortenAddr(addr);
   updateProfileUI();
 }
 
 async function fetchSpinTokenBalance() {
-  if(!ST.address || CFG.DEMO) return;
+  if(!ST.address) return;
   try {
-    const rpc = new ethers.JsonRpcProvider(CFG.RPC);
+    // Altijd mainnet RPC voor SPIN token check
+    const rpc = new ethers.JsonRpcProvider('https://rpc.mainnet.lukso.network');
     const spin = new ethers.Contract(CFG.SPIN_TOKEN, SPIN_ABI, rpc);
     const bal = await spin.balanceOf(ST.address);
     ST.spinTokenBalance = Number(bal);
@@ -762,21 +778,12 @@ async function fetchSpinTokenBalance() {
       document.getElementById('spinBalTxt').textContent = 
         `${ST.spinTokenBalance} tokens = ${spinsAvail} free spins`;
     }
-  } catch(e) { console.warn('fetchSpinTokenBalance:', e); }
+  } catch(e) { console.warn('fetchSpinTokenBalance:', e.message); }
 }
 
-function toggleSpinTokens() {
-  const checked = document.getElementById('useSpinTokens').checked;
-  const spins = ST.spinTokenBalance * 10;
-  if(checked) {
-    ST.pendingFreeSpins = spins;
-  } else {
-    ST.pendingFreeSpins = 0;
-    if(_selBudget > 0) selBudget(_selBudget);
-  }
-}
+function toggleSpinTokens() { updateStartBtn(); }
 
-async function redeemSpinTokens() {
+async function redeemSpinTokens(tokensToUse) {
   if(!ST.address || ST.spinTokenBalance <= 0) return;
   
   const p = getProvider();
@@ -792,7 +799,7 @@ async function redeemSpinTokens() {
     const tx = await spin.transfer(
       ST.address,
       CFG.SM,  // Naar SessionManager
-      BigInt(ST.spinTokenBalance),
+      BigInt(tokensToUse || ST.spinTokenBalance),
       true,
       "0x",
       {gasLimit: 200000}
@@ -800,9 +807,11 @@ async function redeemSpinTokens() {
     await tx.wait();
     hideTx();
     
-    const freeSpins = ST.spinTokenBalance * 10;
-    ST.spinTokenBalance = 0;
-    document.getElementById('spinTokenDiv').style.display = 'none';
+    const freeSpins = (tokensToUse || ST.spinTokenBalance) * 10;
+    ST.spinTokenBalance -= (tokensToUse || ST.spinTokenBalance);
+    if(ST.spinTokenBalance <= 0) {
+      document.getElementById('spinTokenDiv').style.display = 'none';
+    }
     
     // Voeg gratis spins toe aan sessie budget selectie
     ST.pendingFreeSpins = (ST.pendingFreeSpins || 0) + freeSpins;
@@ -845,25 +854,109 @@ function selBudget(val) {
   document.querySelectorAll('.bopt').forEach(e=>e.classList.remove('sel'));
   const idx=[0.5,1,2,5].indexOf(val);
   if(idx>=0) document.querySelectorAll('.bopt')[idx]?.classList.add('sel');
-  document.getElementById('btnStart').disabled=_selBudget<0.1;
-  const spins=Math.floor(_selBudget/CFG.SPIN_COST);
-  document.getElementById('btnStart').textContent=_selBudget>0
-    ?`${t('sm_sign')} (${spins} spins)`
-    :t('sm_sign');
+  updateStartBtn();
+}
+
+function adjustTokens(delta) {
+  const input = document.getElementById('spinTokenCount');
+  if(!input) return;
+  const max = Math.min(ST.spinTokenBalance, 10);
+  let val = parseInt(input.value || '0') + delta;
+  val = Math.max(0, Math.min(val, max));
+  input.value = val;
+  onTokenCountChange();
+}
+
+function onTokenCountChange() {
+  const val = parseInt(document.getElementById('spinTokenCount')?.value || '0');
+  const sub = document.getElementById('spinCountSub');
+  if(sub) sub.textContent = val > 0 ? `= ${val * 10} free spins` : '';
+  updateStartBtn();
+}
+
+// ── SESSIE PERSISTENTIE ─────────────────────────────────────
+function saveSession() {
+  if(!ST.sessionActive || !ST.sessionSeed) return;
+  try {
+    localStorage.setItem('lukso_session', JSON.stringify({
+      seed: ST.sessionSeed.toString(),
+      budget: ST.sessionBudget,
+      spinsAvailable: ST.sessionSpinsAvailable,
+      spinIndex: ST.sessionSpinIndex,
+      results: ST.sessionResults,
+      freeSpinsUsed: ST.freeSpinsUsed || 0,
+      address: ST.address,
+      statSpins: ST.statSpins, statWins: ST.statWins,
+      statLYX: ST.statLYX, statSLYX: ST.statSLYX,
+      statPHL: ST.statPHL, statAGT: ST.statAGT, statNFT: ST.statNFT,
+    }));
+  } catch(e) {}
+}
+
+function restoreSession() {
+  try {
+    const raw = localStorage.getItem('lukso_session');
+    if(!raw) return false;
+    const d = JSON.parse(raw);
+    if(!d.seed || !d.address) return false;
+    if(ST.address && d.address.toLowerCase() !== ST.address.toLowerCase()) {
+      localStorage.removeItem('lukso_session'); return false;
+    }
+    ST.sessionSeed = BigInt(d.seed);
+    ST.sessionBudget = d.budget;
+    ST.sessionSpinsAvailable = d.spinsAvailable;
+    ST.sessionSpinIndex = d.spinIndex;
+    ST.sessionResults = d.results || [];
+    ST.freeSpinsUsed = d.freeSpinsUsed || 0;
+    ST.sessionActive = true;
+    ST.statSpins=d.statSpins||0; ST.statWins=d.statWins||0;
+    ST.statLYX=d.statLYX||0; ST.statSLYX=d.statSLYX||0;
+    ST.statPHL=d.statPHL||0; ST.statAGT=d.statAGT||0; ST.statNFT=d.statNFT||0;
+    return true;
+  } catch(e) { return false; }
+}
+
+function clearSession() { localStorage.removeItem('lukso_session'); }
+
+function updateStartBtn() {
+  const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value || '0');
+  const freeSpins = tokensToUse * 10;
+  const hasLYX = _selBudget >= 0.1;
+  const hasFreeSpins = tokensToUse > 0;
+  
+  const btn = document.getElementById('btnStart');
+  btn.disabled = !hasLYX && !hasFreeSpins;
+  
+  const lyx = hasLYX ? Math.floor(_selBudget/CFG.SPIN_COST) + ' spins' : '';
+  const free = hasFreeSpins ? `+ ${freeSpins} free` : '';
+  const parts = [lyx, free].filter(Boolean).join(' ');
+  btn.textContent = parts ? `${t('sm_sign')} (${parts})` : t('sm_sign');
 }
 
 async function startSession() {
+  // Stel pendingFreeSpins in op basis van geselecteerde tokens
+  const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value || '0');
+  if(tokensToUse > 0) {
+    ST.pendingFreeSpins = tokensToUse * 10;
+    if(!CFG.DEMO) await redeemSpinTokens(tokensToUse);
+  }
+
   if(CFG.DEMO){
     // Demo: genereer lokale seed
+    const tokensDemo = parseInt(document.getElementById('spinTokenCount')?.value || '0');
+    const freeSpinsDemo = tokensDemo * 10;
     ST.sessionSeed=BigInt(Math.floor(Math.random()*Number.MAX_SAFE_INTEGER));
     ST.sessionBudget=_selBudget;
-    ST.sessionSpinsAvailable=Math.floor(_selBudget/CFG.SPIN_COST);
+    ST.sessionSpinsAvailable=Math.floor(_selBudget/CFG.SPIN_COST) + freeSpinsDemo;
+    ST.pendingFreeSpins=0;
     ST.sessionSpinIndex=0;
     ST.sessionResults=[];
+    ST.freeSpinsUsed=0;
     ST.sessionActive=true;
     document.getElementById('sModal').classList.remove('open');
     updateSessionUI();
-    showMsg('🎮 Demo session started!','info');
+    const total = ST.sessionSpinsAvailable;
+    showMsg(`🎮 Demo: ${total} spins ready!`,'info');
     return;
   }
 
@@ -898,12 +991,19 @@ async function startSession() {
 
     ST.sessionSeed=seed;
     ST.sessionBudget=_selBudget;
-    ST.sessionSpinsAvailable=spinsAvail;
+    // Voeg pending free spins toe (van ingewisselde SPIN tokens)
+    const bonusSpins = ST.pendingFreeSpins || 0;
+    ST.sessionSpinsAvailable = spinsAvail + bonusSpins;
+    ST.pendingFreeSpins = 0;
     ST.sessionSpinIndex=0;
     ST.sessionResults=[];
+    ST.freeSpinsUsed=0;
     ST.sessionActive=true;
 
     document.getElementById('sModal').classList.remove('open');
+    // Reset checkbox
+    const cb = document.getElementById('useSpinTokens');
+    if(cb) cb.checked = false;
     updateSessionUI();
     showMsg('✅ Session started! Spin away!','info');
     document.getElementById('emergDiv').style.display='block';
@@ -974,38 +1074,38 @@ async function doSpin() {
   }
 
   updateStats();
+  updateSessionUI();
+  saveSession(); // Bewaar na elke spin
 
-  // Sessie op? Check ook free spins
-  if(ST.sessionSpinIndex>=ST.sessionSpinsAvailable){
-    // Tel gratis spins die gewonnen zijn tijdens sessie
-    const freeWon = ST.sessionResults
-      .filter(r=>[9,10,12].includes(r.prizeType))
-      .reduce((sum,r)=>{
-        if(r.prizeType===9) return sum+5;
-        if(r.prizeType===10) return sum+3;
-        if(r.prizeType===12) return sum+1;
-        return sum;
-      },0);
-    
-    if(freeWon > ST.freeSpinsUsed) {
-      // Nog gratis spins beschikbaar — voeg ze toe aan sessie
-      const extraSpins = freeWon - ST.freeSpinsUsed;
-      ST.sessionSpinsAvailable += extraSpins;
-      ST.freeSpinsUsed = freeWon;
-      updateSessionUI();
-      showMsg(`🎟️ ${extraSpins} free spin(s) added!`, 'win');
-    } else {
-      // Echt geen spins meer
-      setTimeout(()=>document.getElementById('lrModal').classList.add('open'),1500);
+  // Troostprijs: geef 1 gratis spin als er 5 spins geen prijs was
+  if(result.prizeType === 0) {
+    ST.spinsSinceLastPrize = (ST.spinsSinceLastPrize || 0) + 1;
+    if(ST.spinsSinceLastPrize >= 5) {
+      ST.spinsSinceLastPrize = 0;
+      ST.sessionSpinsAvailable++;
+      ST.sessionFreeSpins = (ST.sessionFreeSpins||0) + 1;
+      // Voeg consolation toe aan results zodat contract het weet
+      ST.sessionResults[ST.sessionResults.length-1].prizeType = 12;
+      showMsg('🎟️ Consolation: 1 Free Spin!', 'win');
     }
+  } else {
+    ST.spinsSinceLastPrize = 0;
+  }
+
+  // Sessie op? (free spins zijn al direct toegevoegd bij elke win)
+  if(ST.sessionSpinIndex>=ST.sessionSpinsAvailable){
+    setTimeout(()=>document.getElementById('lrModal').classList.add('open'),1500);
   }
 }
 
 function processPrizeLocal(pt) {
   const actions={
     3:()=>ST.statPHL+=100, 4:()=>ST.statAGT+=50, 5:()=>ST.statSLYX+=10,
+    7:()=>ST.statLYX+=0.05, 8:()=>ST.statLYX+=0.02,
     1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 11:()=>ST.statNFT++,
-    9:()=>ST.sessionFreeSpins+=5, 10:()=>ST.sessionFreeSpins+=3, 12:()=>ST.sessionFreeSpins+=1,
+    9:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable+=5; },
+    10:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable+=3; },
+    12:()=>{ ST.sessionFreeSpins+=1; ST.sessionSpinsAvailable+=1; },
   };
   actions[pt]?.();
 }
@@ -1016,8 +1116,7 @@ async function collectSession() {
 
   if(CFG.DEMO){
     showMsg('✅ Demo: prizes collected!','info');
-    resetStats();
-    endSessionUI();
+    clearSession(); resetStats(); endSessionUI();
     return;
   }
 
@@ -1053,8 +1152,7 @@ async function collectSession() {
     const diffTxt = diff > 0 ? ` (+${diff} LYX refund)` : '';
     showMsg('✅ Winnings collected!' + diffTxt,'win');
     document.getElementById('emergDiv').style.display='none';
-    resetStats();
-    endSessionUI();
+    clearSession(); resetStats(); endSessionUI();
 
   }catch(e){
     hideTx();
@@ -1131,7 +1229,8 @@ async function refreshBalance() {
 }
 
 function resetStats() {
-  ST.statSpins=0; ST.statWins=0; ST.statSLYX=0;
+  ST.statSpins=0; ST.statWins=0; ST.statLYX=0; ST.statSLYX=0;
+  ST.spinsSinceLastPrize=0;
   ST.statPHL=0; ST.statAGT=0; ST.statNFT=0;
   updateStats();
 }
@@ -1205,6 +1304,7 @@ function updateSessionUI() {
 function updateStats(){
   document.getElementById('svSpins').textContent=ST.statSpins;
   document.getElementById('svWins').textContent=ST.statWins;
+  document.getElementById('svLYX').textContent=ST.statLYX.toFixed(3);
   document.getElementById('svSLYX').textContent=ST.statSLYX;
   document.getElementById('svPHL').textContent=ST.statPHL;
   document.getElementById('svAGT').textContent=ST.statAGT;
