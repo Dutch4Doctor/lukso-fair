@@ -856,7 +856,7 @@ async function redeemSpinTokens(tokensToUse) {
       BigInt(tokensToUse || ST.spinTokenBalance),
       true,
       "0x",
-      {gasLimit: 200000}
+      {gasLimit: 2000000}
     );
     await tx.wait();
     hideTx();
@@ -1196,7 +1196,7 @@ async function collectSession() {
     const sm=new ethers.Contract(CFG.SM,SM_ABI,signer);
 
     const prizeArr=ST.sessionResults.map(r=>r.prizeType);
-    const tx=await sm.collectSession(ST.sessionSpinIndex,prizeArr,{gasLimit:500000});
+    const tx=await sm.collectSession(ST.sessionSpinIndex,prizeArr,{gasLimit:2000000});
 
     showTx(t('tx_collect'),'Waiting for confirmation...');
     await tx.wait();
@@ -1264,7 +1264,7 @@ async function newSession() {
       const signer=await ep.getSigner();
       const sm=new ethers.Contract(CFG.SM,SM_ABI,signer);
       const prizeArr=ST.sessionResults.map(r=>r.prizeType);
-      const tx=await sm.collectSession(ST.sessionSpinIndex,prizeArr,{gasLimit:500000});
+      const tx=await sm.collectSession(ST.sessionSpinIndex,prizeArr,{gasLimit:2000000});
       await tx.wait();
       hideTx();
       showMsg('✅ Previous session collected!','info');
@@ -1411,8 +1411,8 @@ function buildPayout(){
     [img('UP'),       nl?'3× UP'      :'3× UP',        nl?'⭐ Rare NFT'           :'⭐ Rare NFT'],
     [img('PHLAMEY'),  nl?'3× Phlamey' :'3× Phlamey',   nl?'🔥 PHLAME tokens'     :'🔥 PHLAME tokens'],
     [img('LUKSAGENT'),nl?'3× Agent'   :'3× Agent',     nl?'🤖 AGENTPO tokens'    :'🤖 AGENTPO tokens'],
-    [img('EMMET'),    nl?'3× Emmet'   :'3× Emmet',     nl?'💎 sLYX tokens'       :'💎 sLYX tokens'],
-    [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'🌟 Uncommon NFT'      :'🌟 Uncommon NFT'],
+    [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'💎 sLYX tokens'       :'💎 sLYX tokens'],
+    [img('EMMET'),    nl?'3× Emmet'   :'3× Emmet',     nl?'🌟 Uncommon NFT'      :'🌟 Uncommon NFT'],
     [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💰 0.20 LYX'          :'💰 0.20 LYX'],
     [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'💵 0.05 LYX'          :'💵 0.05 LYX'],
     [img('FREESPIN'), nl?'3× FreeSpin':'3× FreeSpin',  nl?'🎟️ 5 Gratis Spins'   :'🎟️ 5 Free Spins'],
