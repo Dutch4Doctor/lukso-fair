@@ -979,9 +979,13 @@ async function startSession() {
 
     ST.sessionSeed=seed;
     ST.sessionBudget=_selBudget;
-    ST.sessionSpinsAvailable=spinsAvail;
+    // Voeg pending free spins toe (van ingewisselde SPIN tokens)
+    const bonusSpins = ST.pendingFreeSpins || 0;
+    ST.sessionSpinsAvailable = spinsAvail + bonusSpins;
+    ST.pendingFreeSpins = 0;
     ST.sessionSpinIndex=0;
     ST.sessionResults=[];
+    ST.freeSpinsUsed=0;
     ST.sessionActive=true;
 
     document.getElementById('sModal').classList.remove('open');
