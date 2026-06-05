@@ -6,7 +6,6 @@
   <title>LUKSO Slots — LUKSO Fair</title>
   <meta name="theme-color" content="#0a0015">
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
-  <script src="up-provider.js"></script>
   <style>
 :root {
   --bg:      #0a0015;
@@ -438,8 +437,8 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x482753A9bAD942989d82B4A91254B625Cb97Aa1d',
-  SM:          '0x4a4297539D76Ef72722191484F403295239950e2', // wordt ingevuld na deploy
+  FAIR:        '0xCE87DbdB55E3483507ca2e588dA9A21AD674A961',
+  SM:          '0xb8A45F42F2518b8AAb9A08F8904b987212438216', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
   NFT:         '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
   RPC:         'https://rpc.mainnet.lukso.network',
@@ -625,47 +624,34 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── PROVIDER SETUP ──────────────────────────────────────────
-// Detecteer of we in een iFrame zitten (Grid) of direct
 const IS_IFRAME = window.self !== window.top;
 let _upProvider = null;
 
 function getProvider() {
   if(_upProvider) return _upProvider;
-  
-  if(IS_IFRAME) {
-    // We zitten in een iFrame (LUKSO Grid)
-    try {
-      if(typeof UpProvider !== 'undefined' && UpProvider.createClientUPProvider) {
-        _upProvider = UpProvider.createClientUPProvider();
-        return _upProvider;
-      }
-    } catch(e) { console.warn('UP Provider iFrame error:', e); }
-  }
-  
   // Directe verbinding: mobiel of browser extensie
   return window.lukso || window.ethereum || null;
 }
 
-// iFrame: luister naar accountsChanged event voor automatisch verbinden
+// iFrame: laad up-provider dynamisch en verbind automatisch
 if(IS_IFRAME) {
-  document.addEventListener('DOMContentLoaded', () => {
+  const script = document.createElement('script');
+  script.src = 'up-provider.js';
+  script.onload = () => {
     try {
-      const p = getProvider();
-      if(p) {
-        p.on('accountsChanged', async (accounts) => {
-          if(accounts && accounts.length > 0) {
-            await onConnected(accounts[0]);
-          } else {
-            onDisconnected();
-          }
+      if(typeof UpProvider !== 'undefined' && UpProvider.createClientUPProvider) {
+        _upProvider = UpProvider.createClientUPProvider();
+        _upProvider.on('accountsChanged', async (accounts) => {
+          if(accounts && accounts.length > 0) await onConnected(accounts[0]);
+          else onDisconnected();
         });
-        // Vraag huidige accounts op
-        p.request({method: 'eth_accounts'}).then(accs => {
+        _upProvider.request({method:'eth_accounts'}).then(accs => {
           if(accs && accs.length > 0) onConnected(accs[0]);
-        }).catch(() => {});
+        }).catch(()=>{});
       }
-    } catch(e) { console.warn('iFrame provider setup:', e); }
-  });
+    } catch(e) { console.warn('UP Provider iFrame:', e); }
+  };
+  document.head.appendChild(script);
 }
 
 function setLang(l) {
