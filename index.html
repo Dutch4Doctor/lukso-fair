@@ -437,8 +437,8 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x5a3209779Aa7EDd807e4503c2396C41f4426F931',
-  SM:          '0x7e1B5dcb116a728576FE4c83f70D70133d3a1209', // wordt ingevuld na deploy
+  FAIR:        '0x1aaC508AF2328eD543dF4e3376420d6dB0217Afd',
+  SM:          '0xD6A1873B1EFf521De357698eFf7D14e09262dB4a', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
   NFT:         '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
   RPC:         'https://rpc.mainnet.lukso.network',
@@ -1164,7 +1164,7 @@ async function doSpin() {
 function processPrizeLocal(pt) {
   const actions={
     3:()=>ST.statPHL+=100, 4:()=>ST.statAGT+=50, 5:()=>ST.statSLYX+=10,
-    7:()=>ST.statLYX+=0.05, 8:()=>ST.statLYX+=0.02,
+    7:()=>ST.statLYX+=0.20, 8:()=>ST.statLYX+=0.05,
     1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 11:()=>ST.statNFT++,
     9:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable+=5; },
     10:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable+=3; },
@@ -1397,18 +1397,39 @@ function confetti(n=20){
 }
 
 function buildPayout(){
-  const rows=[
-    ['🔵🔵🔵','🏆 Mythic NFT','0.001%'],['🆙🆙🆙','💜 Rare NFT','0.003%'],
-    ['🔥🔥🔥','🔥 PHLAME','0.006%'],['🐰🐰🐰','🤖 AGENTPO','0.01%'],
-    ['🐘🐘🐘','💎 sLYX','0.02%'],['🐙🐙🐙','🌟 Uncommon NFT','0.03%'],
-    ['💎💎💎','💰 LYX groot','0.07%'],['💵💵💵','💵 LYX klein','0.17%'],
-    ['🪙🪙🪙','🎟️ 5 Free Spins','0.2%'],['🎟️🎟️🎟️','🎟️ 3 Free Spins','0.5%'],
-    ['2× zeldzaam','🖼️ Common NFT','~2%'],['2× midden','💵 LYX','~5%'],
-    ['Elke 5 spins','🎟️ 1 Free Spin','gegarandeerd'],
+  const IMGS = SYMBOL_IMAGES || {};
+  function img(key){ return IMGS[key] ? `<img src="${IMGS[key]}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;border-radius:6px;">` : ''; }
+  
+  const rows3x = [
+    [img('LUKSO'),   '3×', '🏆 Mythic NFT'],
+    [img('UP'),      '3×', '💜 Rare NFT'],
+    [img('Phlamey'), '3×', '🔥 PHLAME tokens'],
+    [img('Agent'),   '3×', '🤖 AGENTPO tokens'],
+    [img('Emmet'),   '3×', '💎 sLYX tokens'],
+    [img('Elyx'),    '3×', '🌟 Uncommon NFT'],
+    [img('Bills'),   '3×', '💰 0.20 LYX'],
+    [img('Coins'),   '3×', '💵 0.05 LYX'],
+    [img('FREESPIN'),'3×', '🎟️ 5 Free Spins'],
   ];
-  document.getElementById('payTbl').innerHTML=rows.map(([c,p,o])=>
-    `<div class="pr"><span class="pc">${c}</span><span class="pp">${p}</span><span class="po">${o}</span></div>`
+  const rows2x = [
+    [img('FREESPIN'),'2×', '🎟️ 3 Free Spins'],
+    ['','2×', '🎟️ 1 Free Spin (any symbol)'],
+    ['','','🎟️ 1 Free Spin (consolation every 5 spins)'],
+  ];
+
+  const tbl = document.getElementById('payTbl');
+  if(!tbl) return;
+  
+  let html = `<div style="font-weight:700;margin-bottom:6px;color:var(--gold)">3× Same Symbol</div>`;
+  html += rows3x.map(([img,mult,prize])=>
+    `<div class="pr"><span class="pc">${img}${mult}</span><span class="pp">${prize}</span></div>`
   ).join('');
+  html += `<div style="font-weight:700;margin:10px 0 6px;color:var(--gold)">2× Same Symbol</div>`;
+  html += rows2x.map(([img,mult,prize])=>
+    `<div class="pr"><span class="pc">${img}${mult}</span><span class="pp">${prize}</span></div>`
+  ).join('');
+  
+  tbl.innerHTML = html;
 }
 </script>
 </body>
