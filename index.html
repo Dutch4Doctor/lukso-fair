@@ -736,7 +736,7 @@ function disconnectWallet(){onDisconnected();showMsg(t('connect_msg'));}
 
 async function fetchProfile(addr) {
   try{
-    // Probeer eerst de UP naam via LSP3
+    // Methode 1: universalprofile.cloud API
     const r=await fetch(`https://api.universalprofile.cloud/v1/${addr}`).catch(()=>null);
     if(r&&r.ok){
       const d=await r.json();
@@ -748,13 +748,42 @@ async function fetchProfile(addr) {
         if(u) ST.profileAvatar=String(u).replace('ipfs://','https://api.universalprofile.cloud/ipfs/');
       }
     }
-    // Fallback: probeer via universalprofile.cloud profile API
+    // Methode 2: ERC725 direct via RPC
     if(!ST.profileName || ST.profileName===shortenAddr(addr)) {
-      const r2=await fetch(`https://universalprofile.cloud/api/profiles/${addr}`).catch(()=>null);
-      if(r2&&r2.ok){
-        const d2=await r2.json();
-        if(d2?.name) ST.profileName=d2.name;
-      }
+      try {
+        const rpc = new ethers.JsonRpcProvider(CFG.RPC);
+        const erc725 = new ethers.Contract(addr, [
+          "function getData(bytes32) view returns (bytes)"
+        ], rpc);
+        const LSP3_KEY = '0x5ef83ad9559033e6e941db7d7c495acdce616347d28e90c7ce47cbfcfcad3bc5';
+        const raw = await erc725.getData(LSP3_KEY);
+        if(raw && raw !== '0x') {
+          // Decodeer VerifiableURI - skip eerste 6 bytes (0x0000 + 4 bytes hash)
+          const hex = raw.slice(2);
+          if(hex.length > 12) {
+            // Zoek 'ipfs://' in de bytes
+            let str = '';
+            for(let i=12; i<hex.length-1; i+=2) {
+              const c = parseInt(hex.slice(i,i+2),16);
+              if(c>=32&&c<127) str+=String.fromCharCode(c);
+            }
+            const ipfsMatch = str.match(/ipfs:\/\/[a-zA-Z0-9]+/);
+            if(ipfsMatch) {
+              const url = ipfsMatch[0].replace('ipfs://','https://api.universalprofile.cloud/ipfs/');
+              const meta = await fetch(url).catch(()=>null);
+              if(meta&&meta.ok) {
+                const md = await meta.json();
+                const p2 = md?.LSP3Profile||md;
+                if(p2?.name) ST.profileName = p2.name;
+                if(!ST.profileAvatar && p2?.profileImage?.length) {
+                  const u2 = p2.profileImage[0]?.url||p2.profileImage[0];
+                  if(u2) ST.profileAvatar=String(u2).replace('ipfs://','https://api.universalprofile.cloud/ipfs/');
+                }
+              }
+            }
+          }
+        }
+      } catch(e2) { console.warn('ERC725 profile:', e2); }
     }
   }catch(e){}
   ST.profileName=ST.profileName||shortenAddr(addr);
