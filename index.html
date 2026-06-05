@@ -437,8 +437,8 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0xD741B312796EF12b3d0E4d02D53e75Df0b986193',
-  SM:          '0xf4dEcec89beb2abC30313F8f6EAbeAb731F2Ba6F', // wordt ingevuld na deploy
+  FAIR:        '0xFF283B888be0020932ebFE4B681F9b36a3bDaf64',
+  SM:          '0x8852fA377c58a9D9CeF50Ee3221B9cD31643DcEf', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
   NFT:         '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
   RPC:         'https://rpc.mainnet.lukso.network',
@@ -493,6 +493,7 @@ const ST = {
   spinTokenBalance:0, // aantal SPIN tokens in wallet
   // Stats
   statSpins:0, statWins:0, statLYX:0, statSLYX:0, statPHL:0, statAGT:0, statNFT:0,
+  spinsSinceLastPrize:0,
   // Geselecteerd budget
   selectedBudget:0,
   // Provider
@@ -590,12 +591,14 @@ function determinePrize(r1, r2, r3, spinIndex) {
   const two = r1===r2||r2===r3;
   if (two) {
     const sym=r1===r2?r1:r2;
-    if(sym<=2) return 11;
-    if(sym<=6) return 8;
-    return 12;
+    if(sym<=2) return 11;  // Common NFT
+    if(sym<=6) return 8;   // LYX klein
+    // sym >= 7: twee bills/coins = geen extra prijs
+    return 0;
   }
-  if (spinIndex>0 && spinIndex%5===4) return 12;
-  return 0;
+  // Troostprijs: alleen als spinIndex % 5 == 4 EN geen prijs in laatste 5 spins
+  // Dit wordt bijgehouden door de frontend via spinsSinceLastPrize
+  return 0; // Frontend voegt consolation toe indien nodig
 }
 
 function prizeMsg(pt) {
@@ -1058,6 +1061,21 @@ async function doSpin() {
   updateSessionUI();
   saveSession(); // Bewaar na elke spin
 
+  // Troostprijs: geef 1 gratis spin als er 5 spins geen prijs was
+  if(result.prizeType === 0) {
+    ST.spinsSinceLastPrize = (ST.spinsSinceLastPrize || 0) + 1;
+    if(ST.spinsSinceLastPrize >= 5) {
+      ST.spinsSinceLastPrize = 0;
+      ST.sessionSpinsAvailable++;
+      ST.sessionFreeSpins = (ST.sessionFreeSpins||0) + 1;
+      // Voeg consolation toe aan results zodat contract het weet
+      ST.sessionResults[ST.sessionResults.length-1].prizeType = 12;
+      showMsg('🎟️ Consolation: 1 Free Spin!', 'win');
+    }
+  } else {
+    ST.spinsSinceLastPrize = 0;
+  }
+
   // Sessie op? Check ook free spins
   if(ST.sessionSpinIndex>=ST.sessionSpinsAvailable){
     // Tel gratis spins die gewonnen zijn tijdens sessie
@@ -1216,6 +1234,7 @@ async function refreshBalance() {
 
 function resetStats() {
   ST.statSpins=0; ST.statWins=0; ST.statLYX=0; ST.statSLYX=0;
+  ST.spinsSinceLastPrize=0;
   ST.statPHL=0; ST.statAGT=0; ST.statNFT=0;
   updateStats();
 }
