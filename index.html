@@ -947,6 +947,7 @@ function saveSession() {
   if(!ST.sessionActive || !ST.sessionSeed) return;
   try {
     localStorage.setItem('lukso_session', JSON.stringify({
+      smAddress: CFG.SM,
       seed: ST.sessionSeed.toString(),
       budget: ST.sessionBudget,
       spinsAvailable: ST.sessionSpinsAvailable,
@@ -967,6 +968,11 @@ function restoreSession() {
     if(!raw) return false;
     const d = JSON.parse(raw);
     if(!d.seed || !d.address) return false;
+    // Controleer of sessie bij huidig contract hoort
+    if(d.smAddress && d.smAddress.toLowerCase() !== CFG.SM.toLowerCase()) {
+      console.log('Sessie hoort bij ander contract, verwijderen...');
+      localStorage.removeItem('lukso_session'); return false;
+    }
     if(ST.address && d.address.toLowerCase() !== ST.address.toLowerCase()) {
       localStorage.removeItem('lukso_session'); return false;
     }

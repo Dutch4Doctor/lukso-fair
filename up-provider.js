@@ -1,4 +1,24 @@
 "use strict";
+// Browser crypto polyfill
+var __require = function(mod) {
+  if (mod === "crypto") {
+    return {
+      randomBytes: function(n) {
+        var arr = new Uint8Array(n);
+        crypto.getRandomValues(arr);
+        return arr;
+      },
+      createHash: function(alg) {
+        return {
+          update: function(data) { this._data = data; return this; },
+          digest: function(enc) { return ''; }
+        };
+      }
+    };
+  }
+  throw new Error("Cannot require: " + mod);
+};
+
 var UpProvider = (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
@@ -1966,7 +1986,7 @@ var UpProvider = (() => {
   }
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/rng.js
-  var import_node_crypto = __require("crypto");
+  var import_node_crypto = { randomBytes: (n) => { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; } };
   var rnds8Pool = new Uint8Array(256);
   var poolPtr = rnds8Pool.length;
   function rng() {
@@ -2014,7 +2034,7 @@ var UpProvider = (() => {
   }
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/native.js
-  var import_node_crypto2 = __require("crypto");
+  var import_node_crypto2 = { randomBytes: (n) => { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; } };
   var native_default = { randomUUID: import_node_crypto2.randomUUID };
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/v4.js
@@ -2047,7 +2067,7 @@ var UpProvider = (() => {
   var v4_default = v4;
 
   // ../../node_modules/.pnpm/uuid@13.0.0/node_modules/uuid/dist-node/sha1.js
-  var import_node_crypto3 = __require("crypto");
+  var import_node_crypto3 = { randomBytes: (n) => { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; } };
   function sha1(bytes) {
     if (Array.isArray(bytes)) {
       bytes = Buffer.from(bytes);
