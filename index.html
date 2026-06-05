@@ -304,6 +304,7 @@ details.pw[open] summary::after{content:'▲'}
       <div class="sgrid">
         <div class="sstat"><span class="si">🎰</span><div><div class="sl" id="elSpins">Spins</div><div class="sv" id="svSpins">0</div></div></div>
         <div class="sstat"><span class="si">🏆</span><div><div class="sl" id="elWins">Wins</div><div class="sv" id="svWins">0</div></div></div>
+        <div class="sstat"><span class="si">💰</span><div><div class="sl">LYX</div><div class="sv" id="svLYX">0</div></div></div>
         <div class="sstat"><span class="si">💎</span><div><div class="sl">sLYX</div><div class="sv" id="svSLYX">0</div></div></div>
         <div class="sstat"><span class="si">🔥</span><div><div class="sl">PHLAME</div><div class="sv" id="svPHL">0</div></div></div>
         <div class="sstat"><span class="si">🤖</span><div><div class="sl">AGENTPO</div><div class="sv" id="svAGT">0</div></div></div>
@@ -436,8 +437,8 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x4eB64528b8d71E317dA8224D8df673c65E580718',
-  SM:          '0x0b331Dd108Fb5Bf28990926e1AFa94f964ae1f69', // wordt ingevuld na deploy
+  FAIR:        '0xD741B312796EF12b3d0E4d02D53e75Df0b986193',
+  SM:          '0xf4dEcec89beb2abC30313F8f6EAbeAb731F2Ba6F', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
   NFT:         '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
   RPC:         'https://rpc.mainnet.lukso.network',
@@ -491,7 +492,7 @@ const ST = {
   freeSpinsUsed:0,    // al gebruikte gratis spins (voorkomt dubbel tellen)
   spinTokenBalance:0, // aantal SPIN tokens in wallet
   // Stats
-  statSpins:0, statWins:0, statSLYX:0, statPHL:0, statAGT:0, statNFT:0,
+  statSpins:0, statWins:0, statLYX:0, statSLYX:0, statPHL:0, statAGT:0, statNFT:0,
   // Geselecteerd budget
   selectedBudget:0,
   // Provider
@@ -1006,6 +1007,7 @@ async function doSpin() {
   }
 
   updateStats();
+  updateSessionUI(); // Refresh spin dots na prize
 
   // Sessie op? Check ook free spins
   if(ST.sessionSpinIndex>=ST.sessionSpinsAvailable){
@@ -1036,8 +1038,11 @@ async function doSpin() {
 function processPrizeLocal(pt) {
   const actions={
     3:()=>ST.statPHL+=100, 4:()=>ST.statAGT+=50, 5:()=>ST.statSLYX+=10,
+    7:()=>ST.statLYX+=0.05, 8:()=>ST.statLYX+=0.02,
     1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 11:()=>ST.statNFT++,
-    9:()=>ST.sessionFreeSpins+=5, 10:()=>ST.sessionFreeSpins+=3, 12:()=>ST.sessionFreeSpins+=1,
+    9:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable+=5; },
+    10:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable+=3; },
+    12:()=>{ ST.sessionFreeSpins+=1; ST.sessionSpinsAvailable+=1; },
   };
   actions[pt]?.();
 }
@@ -1163,7 +1168,7 @@ async function refreshBalance() {
 }
 
 function resetStats() {
-  ST.statSpins=0; ST.statWins=0; ST.statSLYX=0;
+  ST.statSpins=0; ST.statWins=0; ST.statLYX=0; ST.statSLYX=0;
   ST.statPHL=0; ST.statAGT=0; ST.statNFT=0;
   updateStats();
 }
@@ -1237,6 +1242,7 @@ function updateSessionUI() {
 function updateStats(){
   document.getElementById('svSpins').textContent=ST.statSpins;
   document.getElementById('svWins').textContent=ST.statWins;
+  document.getElementById('svLYX').textContent=ST.statLYX.toFixed(3);
   document.getElementById('svSLYX').textContent=ST.statSLYX;
   document.getElementById('svPHL').textContent=ST.statPHL;
   document.getElementById('svAGT').textContent=ST.statAGT;
