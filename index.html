@@ -320,8 +320,8 @@ details.pw[open] summary::after{content:'▲'}
     </div>
 
     <!-- Uitbetaaltabel -->
-    <details class="pw">
-      <summary id="elPayout">Payout Table</summary>
+    <details class="pw" id="payoutDetails">
+      <summary id="elPayout" onclick="setTimeout(buildPayout,50)">Payout Table</summary>
       <div class="ptbl" id="payTbl"></div>
     </details>
   </div>
