@@ -934,11 +934,14 @@ function updateStartBtn() {
 }
 
 async function startSession() {
-  // Stel pendingFreeSpins in op basis van geselecteerde tokens
+  // Wissel SPIN tokens in — redeemSpinTokens zet pendingFreeSpins zelf
   const tokensToUse = parseInt(document.getElementById('spinTokenCount')?.value || '0');
   if(tokensToUse > 0) {
-    ST.pendingFreeSpins = tokensToUse * 10;
-    if(!CFG.DEMO) await redeemSpinTokens(tokensToUse);
+    if(!CFG.DEMO) {
+      await redeemSpinTokens(tokensToUse); // zet pendingFreeSpins intern
+    } else {
+      ST.pendingFreeSpins = (ST.pendingFreeSpins || 0) + tokensToUse * 10;
+    }
   }
 
   if(CFG.DEMO){
