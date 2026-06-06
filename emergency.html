@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LUKSO Fair - Emergency Withdraw</title>
+<style>
+body{font-family:sans-serif;background:#1a0a2e;color:white;padding:20px;max-width:600px;margin:0 auto}
+h1{color:#gold}
+button{background:#c0392b;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:16px;cursor:pointer;margin:10px 0;width:100%}
+button:hover{background:#e74c3c}
+.info{background:rgba(255,255,255,0.1);padding:12px;border-radius:8px;margin:10px 0;font-size:13px}
+.success{background:rgba(0,255,0,0.2);padding:12px;border-radius:8px}
+.error{background:rgba(255,0,0,0.2);padding:12px;border-radius:8px}
+</style>
+</head>
+<body>
+<h1>⚠️ Emergency Withdraw</h1>
+<p>Haal je LYX op uit oude sessie contracten.</p>
+
+<div class="info">
+<b>Contract 1:</b> 0xB2eAa3f36b8D9dA7F73b00d95c662898f9Ad1E74<br>
+Verwacht: ~5 LYX
+</div>
+<button onclick="withdraw('0xB2eAa3f36b8D9dA7F73b00d95c662898f9Ad1E74')">
+  Withdraw van Contract 1
+</button>
+
+<div class="info">
+<b>Contract 2:</b> 0x5A84A6cbceCfc4b4Af78E3D684B2f95a57453eD0<br>
+Verwacht: ~2 LYX
+</div>
+<button onclick="withdraw('0x5A84A6cbceCfc4b4Af78E3D684B2f95a57453eD0')">
+  Withdraw van Contract 2
+</button>
+
+<div id="log"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+<script>
+const SM_ABI = ["function emergencyWithdraw() external"];
+
+async function withdraw(contractAddr) {
+  const log = document.getElementById('log');
+  try {
+    const provider = window.lukso || window.ethereum;
+    if(!provider) { log.innerHTML = '<div class="error">Geen wallet gevonden!</div>'; return; }
+    
+    const ep = new ethers.BrowserProvider(provider);
+    const signer = await ep.getSigner();
+    log.innerHTML = '<div class="info">Transactie versturen...</div>';
+    
+    const sm = new ethers.Contract(contractAddr, SM_ABI, signer);
+    const tx = await sm.emergencyWithdraw({ gasLimit: 100000 });
+    log.innerHTML = '<div class="info">Wachten op bevestiging...</div>';
+    await tx.wait();
+    log.innerHTML = `<div class="success">✅ Withdraw geslaagd! Tx: ${tx.hash}</div>`;
+  } catch(e) {
+    log.innerHTML = `<div class="error">❌ Fout: ${e.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>
