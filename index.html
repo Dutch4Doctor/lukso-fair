@@ -437,10 +437,10 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x294caa72c1A23A99777069a2Ed8A4D792a11D136',
-  SM:          '0xB2eAa3f36b8D9dA7F73b00d95c662898f9Ad1E74', // wordt ingevuld na deploy
+  FAIR:        '0x6f5201293a4028DE51a6477b72D9e96BE5DD0c87',
+  SM:          '0x5A84A6cbceCfc4b4Af78E3D684B2f95a57453eD0', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  NFT:         '0x530BEd9af5D96C21C73f43B948d6BD9ff70b24Cc',
+  NFT:         '0x6432e8e0B6cE9e5427dd166D23ed4d880F9E8bA5',
   RPC:         'https://rpc.mainnet.lukso.network',
   CHAIN:       42,
   PLATFORM:    'https://profile.link/lukso-fair@fBC4',
@@ -571,21 +571,21 @@ function calcSpinResult(seed, spinIndex) {
 
 function pickSymbol(seed) {
   const r = Number(seed % 100n);
-  if (r < 2)  return 0;
-  if (r < 5)  return 1;
-  if (r < 9)  return 2;
-  if (r < 14) return 3;
-  if (r < 20) return 4;
-  if (r < 27) return 5;
-  if (r < 36) return 6;
-  if (r < 48) return 7;
-  if (r < 62) return 8;
-  return 9;
+  if (r < 2)  return 0; // LUKSO    2%  → Mythic NFT
+  if (r < 5)  return 1; // UP       3%  → Rare NFT
+  if (r < 9)  return 2; // Phlamey  4%  → PHLAME
+  if (r < 14) return 3; // Agent    5%  → AGENTPO
+  if (r < 20) return 4; // Elyx     6%  → sLYX groot
+  if (r < 27) return 5; // Emmet    7%  → Uncommon NFT
+  if (r < 36) return 6; // sLYX     9%  → sLYX klein
+  if (r < 48) return 7; // Bills   12%  → LYX groot (0.20)
+  if (r < 62) return 8; // Coins   14%  → LYX klein (0.05)
+  return 9;             // FreeSpin 38% → 3 free spins
 }
 
 function determinePrize(r1, r2, r3, spinIndex) {
   if (r1===r2 && r2===r3) {
-    const map={0:1,1:2,2:3,3:4,4:5,5:6,6:7,7:8,8:9,9:10};
+    const map={0:1,1:2,2:3,3:4,4:5,5:6,6:13,7:7,8:8,9:9}; // 13=sLYX klein
     return map[r1]??0;
   }
   const two = r1===r2||r2===r3;
@@ -604,7 +604,7 @@ function determinePrize(r1, r2, r3, spinIndex) {
 function prizeMsg(pt) {
   const map={1:'w_jackpot',2:'w_rare',3:'w_phlame',4:'w_agentpo',5:'w_slyx',
              6:'w_uncommon',7:'w_lyxlg',8:'w_lyxsm',9:'w_free5',10:'w_free3',
-             11:'w_common',12:'w_cons'};
+             11:'w_common',12:'w_cons',13:'w_slyx'};
   return map[pt]?t(map[pt]):t('no_win');
 }
 
@@ -1164,7 +1164,7 @@ async function doSpin() {
 function processPrizeLocal(pt) {
   const actions={
     3:()=>ST.statPHL+=100, 4:()=>ST.statAGT+=50, 5:()=>ST.statSLYX+=10,
-    7:()=>ST.statLYX+=0.20, 8:()=>ST.statLYX+=0.05,
+    7:()=>ST.statLYX+=0.20, 8:()=>ST.statLYX+=0.05, 13:()=>{},
     1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 11:()=>ST.statNFT++,
     9:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable+=5; },
     10:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable+=3; },
@@ -1411,8 +1411,9 @@ function buildPayout(){
     [img('UP'),       nl?'3× UP'      :'3× UP',        nl?'⭐ Rare NFT'           :'⭐ Rare NFT'],
     [img('PHLAMEY'),  nl?'3× Phlamey' :'3× Phlamey',   nl?'🔥 PHLAME tokens'     :'🔥 PHLAME tokens'],
     [img('LUKSAGENT'),nl?'3× Agent'   :'3× Agent',     nl?'🤖 AGENTPO tokens'    :'🤖 AGENTPO tokens'],
-    [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'💎 sLYX tokens'       :'💎 sLYX tokens'],
+    [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'💎 sLYX groot'        :'💎 sLYX large'],
     [img('EMMET'),    nl?'3× Emmet'   :'3× Emmet',     nl?'🌟 Uncommon NFT'      :'🌟 Uncommon NFT'],
+    [img('SLYX'),     nl?'3× sLYX'    :'3× sLYX',      nl?'💎 sLYX klein'        :'💎 sLYX small'],
     [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💰 0.20 LYX'          :'💰 0.20 LYX'],
     [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'💵 0.05 LYX'          :'💵 0.05 LYX'],
     [img('FREESPIN'), nl?'3× FreeSpin':'3× FreeSpin',  nl?'🎟️ 5 Gratis Spins'   :'🎟️ 5 Free Spins'],
