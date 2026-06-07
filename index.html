@@ -437,10 +437,10 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x0B4C816E22681b512a6E523ce862fd634104c1A9',
-  SM:          '0xa4c687cC1802c9ce9B6b024E46129fE3c645fe97', // wordt ingevuld na deploy
+  FAIR:        '0xEe9d9f5B22E5058E8863639300A49679b9950C9B',
+  SM:          '0xfd4446989d15Ad405d66eBEab543f60Da551E016', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  NFT:         '0x38a5036dBa98067b408417c0c4F181112b4Ea3Aa',
+  NFT:         '0x720A320685932b2e9455C1Ac1fE34E92DE2386f9',
   RPC:         'https://rpc.mainnet.lukso.network',
   CHAIN:       42,
   PLATFORM:    'https://profile.link/lukso-fair@fBC4',
@@ -604,7 +604,7 @@ function determinePrize(r1, r2, r3, spinIndex) {
 
 function prizeMsg(pt) {
   const map={1:'w_jackpot',2:'w_rare',3:'w_phlame',4:'w_agentpo',5:'w_slyx',
-             6:'w_uncommon',7:'w_lyxlg',8:'w_lyxsm',9:'w_free5',10:'w_free3',
+             6:'w_uncommon',7:'w_lyxlg',8:'w_lyxsm',9:'w_free5',
              11:'w_common',12:'w_cons',13:'w_slyx'};
   return map[pt]?t(map[pt]):t('no_win');
 }
@@ -1414,9 +1414,9 @@ function buildPayout(){
     [img('LUKSAGENT'),nl?'3× Agent'   :'3× Agent',     nl?'🤖 AGENTPO tokens'    :'🤖 AGENTPO tokens'],
     [img('EMMET'),    nl?'3× Emmet'   :'3× Emmet',     nl?'🌟 Uncommon NFT'      :'🌟 Uncommon NFT'],
     [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'💎 5 sLYX'            :'💎 5 sLYX'],
-    [img('SLYX'),     nl?'3× sLYX'    :'3× sLYX',      nl?'💎 1 sLYX'            :'💎 1 sLYX'],
-    [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💰 0.20 LYX'          :'💰 0.20 LYX'],
-    [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'💵 0.05 LYX'          :'💵 0.05 LYX'],
+    [img('SLYX'),     nl?'3× sLYX'    :'3× sLYX',      nl?'💰 0.20 LYX'          :'💰 0.20 LYX'],
+    [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💵 0.05 LYX'          :'💵 0.05 LYX'],
+    [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'🎟️ 5 Gratis Spins'   :'🎟️ 5 Free Spins'],
     [img('FREESPIN'), nl?'3× FreeSpin':'3× FreeSpin',  nl?'🎟️ 5 Gratis Spins'   :'🎟️ 5 Free Spins'],
   ];
   const rows2x = [
