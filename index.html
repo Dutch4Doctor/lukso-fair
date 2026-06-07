@@ -1057,7 +1057,7 @@ async function startSession() {
     ST.sessionBudget=_selBudget;
     // Voeg pending free spins toe (van ingewisselde SPIN tokens)
     const bonusSpins = ST.pendingFreeSpins || 0;
-    ST.sessionSpinsAvailable = spinsAvail + bonusSpins;
+    ST.sessionSpinsAvailable = Math.min(spinsAvail + bonusSpins, CFG.MAX_SPINS);
     ST.pendingFreeSpins = 0;
     ST.sessionSpinIndex=0;
     ST.sessionResults=[];
@@ -1167,9 +1167,9 @@ function processPrizeLocal(pt) {
     3:()=>ST.statPHL+=100, 4:()=>ST.statAGT+=50, 5:()=>ST.statSLYX+=5, 13:()=>ST.statSLYX+=1,
     7:()=>ST.statLYX+=0.20, 8:()=>ST.statLYX+=0.05,
     1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 11:()=>ST.statNFT++,
-    9:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable+=5; },
-    10:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable+=3; },
-    12:()=>{ ST.sessionFreeSpins+=1; ST.sessionSpinsAvailable+=1; },
+    9:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+5, CFG.MAX_SPINS); },
+    10:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+3, CFG.MAX_SPINS); },
+    12:()=>{ ST.sessionFreeSpins+=1; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+1, CFG.MAX_SPINS); },
   };
   actions[pt]?.();
 }
@@ -1197,7 +1197,7 @@ async function collectSession() {
     const sm=new ethers.Contract(CFG.SM,SM_ABI,signer);
 
     const prizeArr=ST.sessionResults.map(r=>r.prizeType);
-    const tx=await sm.collectSession(ST.sessionSpinIndex,prizeArr,{gasLimit:2000000});
+    const tx=await sm.collectSession(ST.sessionResults.length,prizeArr,{gasLimit:2000000});
 
     showTx(t('tx_collect'),'Waiting for confirmation...');
     await tx.wait();
@@ -1265,7 +1265,7 @@ async function newSession() {
       const signer=await ep.getSigner();
       const sm=new ethers.Contract(CFG.SM,SM_ABI,signer);
       const prizeArr=ST.sessionResults.map(r=>r.prizeType);
-      const tx=await sm.collectSession(ST.sessionSpinIndex,prizeArr,{gasLimit:2000000});
+      const tx=await sm.collectSession(ST.sessionResults.length,prizeArr,{gasLimit:2000000});
       await tx.wait();
       hideTx();
       showMsg('✅ Previous session collected!','info');
