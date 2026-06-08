@@ -320,7 +320,11 @@ details.pw[open] summary::after{content:'▲'}
       <button class="btn-sm btn-emergency" id="bEmerg" onclick="emergencyWithdraw()" style="width:100%;padding:10px">
         ⚠️ <span id="elEmerg">Withdraw funds (emergency)</span>
       </button>
-      <button onclick="resetSession()" style="width:100%;padding:8px;margin-top:4px;border:none;border-radius:8px;background:#333;color:#aaa;cursor:pointer;font-size:11px;">
+    </div>
+
+    <!-- Reset session (altijd zichtbaar als verbonden) -->
+    <div id="resetDiv" style="display:none;margin:0 12px 6px">
+      <button onclick="resetSession()" style="width:100%;padding:8px;border:none;border-radius:8px;background:#333;color:#aaa;cursor:pointer;font-size:11px;">
         🗑️ Reset session data
       </button>
     </div>
@@ -757,6 +761,7 @@ async function onConnected(addr) {
 
   updateUI();
   document.getElementById('bSpin').disabled=false;
+  document.getElementById('resetDiv').style.display='block';
 }
 
 function onDisconnected() {
@@ -1288,10 +1293,12 @@ async function collectSession() {
   }
 }
 
-// ── EMERGENCY WITHDRAW ───────────────────────────────────────
+// ── RESET SESSION ────────────────────────────────────────────
 function resetSession() {
-  if(confirm('Reset session data? Gebruik eerst Emergency Withdraw als je een actieve sessie hebt!')) {
+  if(confirm('Reset session data? Gebruik eerst Emergency Withdraw als je een actieve sessie met ingelegde LYX hebt!')) {
+    // Wis alle mogelijke sessie-sleutels uit localStorage
     localStorage.removeItem('lukso_session');
+    localStorage.clear(); // volledig wissen voor zekerheid
     ST.sessionActive=false; ST.sessionSeed=null; ST.sessionResults=[];
     ST.sessionSpinIndex=0; ST.sessionSpinsAvailable=0;
     ST.statSpins=0; ST.statWins=0; ST.statLYX=0; ST.statSLYX=0;
@@ -1299,7 +1306,8 @@ function resetSession() {
     ST.spinsSinceLastPrize=0; ST.sessionFreeSpins=0;
     document.getElementById('emergDiv').style.display='none';
     updateSessionUI(); updateStats();
-    showMsg('✅ Sessie gereset!','info');
+    showMsg('✅ Sessie gereset! Pagina wordt herladen...','info');
+    setTimeout(()=>location.reload(), 1200);
   }
 }
 
