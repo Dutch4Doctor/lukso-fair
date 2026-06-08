@@ -443,10 +443,10 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x81f873BBCfb8f63FFFcbb1892EEE97DC370b922F',
-  SM:          '0x4f0BE3bbEA5CAda66D49325D9280dAF6F0395742', // wordt ingevuld na deploy
+  FAIR:        '0x2cf37b1659ED4bd7d343dcC65f66d1168fe2507F',
+  SM:          '0xaC2b037fF8aD786A0A1D92B5637D6a1b7166d6e9', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  NFT:         '0x91ad965768dfe955BDbE0Ae7721B5016B5D8A568',
+  NFT:         '0xF0C1184aD9431a3cEC839CfF98d207Ac4fB68d58',
   RPC:         'https://rpc.mainnet.lukso.network',
   CHAIN:       42,
   PLATFORM:    'https://profile.link/lukso-fair@fBC4',
@@ -610,7 +610,7 @@ function determinePrize(r1, r2, r3, spinIndex) {
 
 function prizeMsg(pt) {
   const map={1:'w_jackpot',2:'w_rare',3:'w_phlame',4:'w_agentpo',5:'w_slyx',
-             6:'w_uncommon',7:'w_common',8:'w_lyxlg',9:'w_lyxsm',10:'w_free5',
+             6:'w_uncommon',7:'w_common',8:'w_lyxlg',9:'w_lyxsm',
              11:'w_free3',12:'w_cons',13:'w_slyx'};
   return map[pt]?t(map[pt]):t('no_win');
 }
@@ -1230,8 +1230,7 @@ function processPrizeLocal(pt) {
   const actions={
     3:()=>ST.statPHL+=100, 4:()=>ST.statAGT+=50, 5:()=>ST.statSLYX+=5, 13:()=>ST.statSLYX+=1,
     8:()=>ST.statLYX+=0.20, 9:()=>ST.statLYX+=0.05,
-    1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 11:()=>ST.statNFT++,
-    10:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+5, CFG.MAX_SPINS); },
+    1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 7:()=>ST.statNFT++,
     11:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+3, CFG.MAX_SPINS); },
     12:()=>{ ST.sessionFreeSpins+=1; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+1, CFG.MAX_SPINS); },
   };
@@ -1291,12 +1290,16 @@ async function collectSession() {
 
 // ── EMERGENCY WITHDRAW ───────────────────────────────────────
 function resetSession() {
-  if(confirm('Reset session data? This will clear your local session. Use Emergency Withdraw first if you have an active session!')) {
+  if(confirm('Reset session data? Gebruik eerst Emergency Withdraw als je een actieve sessie hebt!')) {
     localStorage.removeItem('lukso_session');
     ST.sessionActive=false; ST.sessionSeed=null; ST.sessionResults=[];
     ST.sessionSpinIndex=0; ST.sessionSpinsAvailable=0;
-    updateSessionUI();
-    showMsg('✅ Session data reset!','info');
+    ST.statSpins=0; ST.statWins=0; ST.statLYX=0; ST.statSLYX=0;
+    ST.statPHL=0; ST.statAGT=0; ST.statNFT=0;
+    ST.spinsSinceLastPrize=0; ST.sessionFreeSpins=0;
+    document.getElementById('emergDiv').style.display='none';
+    updateSessionUI(); updateStats();
+    showMsg('✅ Sessie gereset!','info');
   }
 }
 
