@@ -128,6 +128,8 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .btn-spin-big:active:not(:disabled){transform:translateY(0)}
 .btn-spin-big:disabled{background:#2a1a3a;color:#5a4a6a;cursor:not-allowed;box-shadow:none;transform:none}
 .btn-spin-big.spinning{animation:pulseSpin 0.6s ease-in-out infinite}
+.btn-spin-big.autospin{background:linear-gradient(135deg,#a00,#c00)!important;box-shadow:0 4px 20px rgba(255,0,0,.5)!important;}
+.autospin-label{font-size:10px;opacity:0.8;display:block;margin-top:2px;}
 @keyframes pulseSpin{0%,100%{box-shadow:0 6px 24px rgba(160,80,255,.55)}50%{box-shadow:0 6px 40px rgba(160,80,255,.9)}}
 
 .btn-row{display:flex;gap:8px}
@@ -284,8 +286,9 @@ details.pw[open] summary::after{content:'▲'}
 
     <!-- Knoppen -->
     <div class="ctrl">
-      <button class="btn-spin-big" id="bSpin" onclick="doSpin()" disabled>
+      <button class="btn-spin-big" id="bSpin" onclick="doSpin()" onmousedown="holdStart()" onmouseup="holdStop()" ontouchstart="holdStart()" ontouchend="holdStop()" disabled>
         <span id="bSpinTxt">START SESSION</span>
+        <span class="autospin-label" id="autoSpinLabel">hold for auto spin</span>
       </button>
       <div class="btn-row" id="winBtns" style="display:none">
         <button class="btn-sm btn-collect" onclick="collectSession()">
@@ -437,10 +440,10 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0xEe9d9f5B22E5058E8863639300A49679b9950C9B',
-  SM:          '0xfd4446989d15Ad405d66eBEab543f60Da551E016', // wordt ingevuld na deploy
+  FAIR:        '0x02a7b5C00c3F9D9d6C9F0CEFB681a5e26F882A77',
+  SM:          '0x8a0E45C36a8804F70C40a5413cB48B2C0B016081', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  NFT:         '0x720A320685932b2e9455C1Ac1fE34E92DE2386f9',
+  NFT:         '0xF11a927078271859911423aE07F4833fAB50d067',
   RPC:         'https://rpc.mainnet.lukso.network',
   CHAIN:       42,
   PLATFORM:    'https://profile.link/lukso-fair@fBC4',
@@ -585,7 +588,7 @@ function pickSymbol(seed) {
 
 function determinePrize(r1, r2, r3, spinIndex) {
   if (r1===r2 && r2===r3) {
-    const map={0:1,1:2,2:3,3:4,4:5,5:6,6:13,7:7,8:8,9:9};
+    const map={0:1,1:2,2:3,3:4,4:5,5:6,6:13,7:8,8:9,9:11};
     return map[r1]??0;
   }
   const two = r1===r2||r2===r3;
@@ -604,8 +607,8 @@ function determinePrize(r1, r2, r3, spinIndex) {
 
 function prizeMsg(pt) {
   const map={1:'w_jackpot',2:'w_rare',3:'w_phlame',4:'w_agentpo',5:'w_slyx',
-             6:'w_uncommon',7:'w_lyxlg',8:'w_lyxsm',9:'w_free5',
-             11:'w_common',12:'w_cons',13:'w_slyx'};
+             6:'w_uncommon',7:'w_common',8:'w_lyxlg',9:'w_lyxsm',10:'w_free5',
+             11:'w_free3',12:'w_cons',13:'w_slyx'};
   return map[pt]?t(map[pt]):t('no_win');
 }
 
@@ -717,7 +720,10 @@ function animateReel(idx, finalSym) {
 // ── WALLET ───────────────────────────────────────────────────
 async function connectWallet() {
   const p=getProvider();
-  if(!p){showMsg('No wallet found!','warn');return;}
+  if(!p){
+    showMsg('⚠️ Geen wallet gevonden. Open de app in de LUKSO Browser of Grid.','warn');
+    return;
+  }
   try{
     document.getElementById('bConn').disabled=true;
     const accs=await p.request({method:'eth_requestAccounts'});
@@ -1079,6 +1085,61 @@ async function startSession() {
 }
 
 // ── SPIN (geen transactie!) ──────────────────────────────────
+// ── AUTO SPIN ────────────────────────────────────────────────
+let autoSpinActive = false;
+let autoSpinTimeout = null;
+let holdTimer = null;
+const HOLD_MS = 600; // ms vasthouden om auto-spin te activeren
+const AUTO_SPIN_DELAY = 800; // ms tussen auto spins
+
+function holdStart() {
+  if(!ST.sessionActive || !ST.connected) return;
+  holdTimer = setTimeout(() => {
+    autoSpinActive = !autoSpinActive;
+    const btn = document.getElementById('bSpin');
+    const lbl = document.getElementById('autoSpinLabel');
+    if(autoSpinActive) {
+      btn.classList.add('autospin');
+      if(lbl) lbl.textContent = '🔄 auto spin ON';
+      autoSpinLoop();
+    } else {
+      btn.classList.remove('autospin');
+      if(lbl) lbl.textContent = 'hold for auto spin';
+      clearTimeout(autoSpinTimeout);
+    }
+  }, HOLD_MS);
+}
+
+function holdStop() {
+  clearTimeout(holdTimer);
+  holdTimer = null;
+}
+
+function autoSpinLoop() {
+  if(!autoSpinActive || !ST.sessionActive) {
+    autoSpinActive = false;
+    const btn = document.getElementById('bSpin');
+    const lbl = document.getElementById('autoSpinLabel');
+    if(btn) btn.classList.remove('autospin');
+    if(lbl) lbl.textContent = 'hold for auto spin';
+    return;
+  }
+  const btn = document.getElementById('bSpin');
+  if(!btn || btn.disabled) {
+    autoSpinTimeout = setTimeout(autoSpinLoop, AUTO_SPIN_DELAY);
+    return;
+  }
+  doSpin().then(() => {
+    if(autoSpinActive && ST.sessionActive) {
+      autoSpinTimeout = setTimeout(autoSpinLoop, AUTO_SPIN_DELAY);
+    } else {
+      autoSpinActive = false;
+    }
+  }).catch(() => {
+    autoSpinActive = false;
+  });
+}
+
 async function doSpin() {
   if(!ST.connected){
     // Nog niet verbonden: connect modal
@@ -1165,10 +1226,10 @@ async function doSpin() {
 function processPrizeLocal(pt) {
   const actions={
     3:()=>ST.statPHL+=100, 4:()=>ST.statAGT+=50, 5:()=>ST.statSLYX+=5, 13:()=>ST.statSLYX+=1,
-    7:()=>ST.statLYX+=0.20, 8:()=>ST.statLYX+=0.05,
+    8:()=>ST.statLYX+=0.20, 9:()=>ST.statLYX+=0.05,
     1:()=>ST.statNFT++, 2:()=>ST.statNFT++, 6:()=>ST.statNFT++, 11:()=>ST.statNFT++,
-    9:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+5, CFG.MAX_SPINS); },
-    10:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+3, CFG.MAX_SPINS); },
+    10:()=>{ ST.sessionFreeSpins+=5; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+5, CFG.MAX_SPINS); },
+    11:()=>{ ST.sessionFreeSpins+=3; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+3, CFG.MAX_SPINS); },
     12:()=>{ ST.sessionFreeSpins+=1; ST.sessionSpinsAvailable=Math.min(ST.sessionSpinsAvailable+1, CFG.MAX_SPINS); },
   };
   actions[pt]?.();
@@ -1176,6 +1237,7 @@ function processPrizeLocal(pt) {
 
 // ── COLLECT SESSION (handtekening 2) ────────────────────────
 async function collectSession() {
+  autoSpinActive = false; clearTimeout(autoSpinTimeout);
   document.getElementById('lrModal').classList.remove('open');
 
   if(CFG.DEMO){
@@ -1414,10 +1476,10 @@ function buildPayout(){
     [img('LUKSAGENT'),nl?'3× Agent'   :'3× Agent',     nl?'🤖 AGENTPO tokens'    :'🤖 AGENTPO tokens'],
     [img('EMMET'),    nl?'3× Emmet'   :'3× Emmet',     nl?'🌟 Uncommon NFT'      :'🌟 Uncommon NFT'],
     [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'💎 5 sLYX'            :'💎 5 sLYX'],
-    [img('SLYX'),     nl?'3× sLYX'    :'3× sLYX',      nl?'💰 0.20 LYX'          :'💰 0.20 LYX'],
-    [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💵 0.05 LYX'          :'💵 0.05 LYX'],
-    [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'🎟️ 5 Gratis Spins'   :'🎟️ 5 Free Spins'],
-    [img('FREESPIN'), nl?'3× FreeSpin':'3× FreeSpin',  nl?'🎟️ 5 Gratis Spins'   :'🎟️ 5 Free Spins'],
+    [img('SLYX'),     nl?'3× sLYX'    :'3× sLYX',      nl?'💎 1 sLYX'            :'💎 1 sLYX'],
+    [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💰 0.20 LYX'          :'💰 0.20 LYX'],
+    [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'💵 0.05 LYX'          :'💵 0.05 LYX'],
+    [img('FREESPIN'), nl?'3× FreeSpin':'3× FreeSpin',  nl?'🎟️ 3 Gratis Spins'   :'🎟️ 3 Free Spins'],
   ];
   const rows2x = [
     [img('LUKSO')+img('UP')+img('PHLAMEY'), nl?'2× (zeld.)':'2× (rare)', nl?'🖼️ Common NFT':'🖼️ Common NFT'],
