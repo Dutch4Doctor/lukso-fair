@@ -320,6 +320,9 @@ details.pw[open] summary::after{content:'▲'}
       <button class="btn-sm btn-emergency" id="bEmerg" onclick="emergencyWithdraw()" style="width:100%;padding:10px">
         ⚠️ <span id="elEmerg">Withdraw funds (emergency)</span>
       </button>
+      <button onclick="resetSession()" style="width:100%;padding:8px;margin-top:4px;border:none;border-radius:8px;background:#333;color:#aaa;cursor:pointer;font-size:11px;">
+        🗑️ Reset session data
+      </button>
     </div>
 
     <!-- Uitbetaaltabel -->
@@ -440,10 +443,10 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x9B10172ccfFF1502d6E6bbCbB82706D2461BcB05',
-  SM:          '0x4CfC882b4BE8Cd8573673B9CC431dD730F3c01d3', // wordt ingevuld na deploy
+  FAIR:        '0x81f873BBCfb8f63FFFcbb1892EEE97DC370b922F',
+  SM:          '0x4f0BE3bbEA5CAda66D49325D9280dAF6F0395742', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  NFT:         '0xF4441aF7aCc37C8b43183F9ee3fB0EFBf53A3C49',
+  NFT:         '0x91ad965768dfe955BDbE0Ae7721B5016B5D8A568',
   RPC:         'https://rpc.mainnet.lukso.network',
   CHAIN:       42,
   PLATFORM:    'https://profile.link/lukso-fair@fBC4',
@@ -594,9 +597,9 @@ function determinePrize(r1, r2, r3, spinIndex) {
   const two = r1===r2||r2===r3;
   if (two) {
     const sym=r1===r2?r1:r2;
-    if(sym<=2) return 7;   // Common NFT (2x LUKSO/UP/Phlamey)
-    if(sym<=5) return 7;   // Common NFT ook (2x Agent/Elyx/Emmet)
-    if(sym<=6) return 9;   // 0.05 LYX (2x sLYX)
+    if(sym<=2) return 6;   // Uncommon NFT (2x LUKSO/UP/Phlamey)
+    if(sym<=5) return 7;   // Common NFT (2x Agent/Elyx/Emmet)
+    // 2x sLYX of hoger = geen prijs
     // sym >= 7: geen aparte prijs
     return 0;
   }
@@ -1287,6 +1290,16 @@ async function collectSession() {
 }
 
 // ── EMERGENCY WITHDRAW ───────────────────────────────────────
+function resetSession() {
+  if(confirm('Reset session data? This will clear your local session. Use Emergency Withdraw first if you have an active session!')) {
+    localStorage.removeItem('lukso_session');
+    ST.sessionActive=false; ST.sessionSeed=null; ST.sessionResults=[];
+    ST.sessionSpinIndex=0; ST.sessionSpinsAvailable=0;
+    updateSessionUI();
+    showMsg('✅ Session data reset!','info');
+  }
+}
+
 async function emergencyWithdraw() {
   if(CFG.DEMO){showMsg('🎮 Demo: no funds to withdraw','info');return;}
   if(!confirm('Withdraw all remaining session funds? You will lose any uncollected winnings.')) return;
@@ -1482,9 +1495,9 @@ function buildPayout(){
     [img('FREESPIN'), nl?'3× FreeSpin':'3× FreeSpin',  nl?'🎟️ 3 Gratis Spins'   :'🎟️ 3 Free Spins'],
   ];
   const rows2x = [
-    [img('LUKSO')+img('UP')+img('PHLAMEY'), nl?'2× (zeld.)':'2× (rare)', nl?'🖼️ Common NFT':'🖼️ Common NFT'],
+    [img('LUKSO')+img('UP')+img('PHLAMEY'), nl?'2× (zeld.)':'2× (rare)', nl?'🌟 Uncommon NFT':'🌟 Uncommon NFT'],
     [img('LUKSAGENT')+img('ELYX')+img('EMMET'), nl?'2× (middel)':'2× (mid)', nl?'🖼️ Common NFT':'🖼️ Common NFT'],
-    [img('SLYX'), nl?'2× sLYX':'2× sLYX', nl?'💵 0.05 LYX':'💵 0.05 LYX'],
+
     ['',              nl?'Troostprijs':'Consolation',nl?'🎟️ 1 Gratis Spin (na 5 spins zon prijs)':'🎟️ 1 Free Spin (after 5 spins no prize)'],
   ];
 

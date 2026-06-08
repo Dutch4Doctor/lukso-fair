@@ -6,64 +6,47 @@
 <style>
 body{font-family:sans-serif;background:#1a0a2e;color:white;padding:20px;max-width:600px;margin:0 auto}
 h1{color:#f5c842}
-button{background:#c0392b;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:16px;cursor:pointer;margin:10px 0;width:100%}
+button{background:#c0392b;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;margin:8px 0;width:100%}
 button:hover{background:#e74c3c}
-.info{background:rgba(255,255,255,0.1);padding:12px;border-radius:8px;margin:10px 0;font-size:13px}
+.info{background:rgba(255,255,255,0.1);padding:10px;border-radius:8px;margin:8px 0;font-size:12px;word-break:break-all}
 .success{background:rgba(0,255,0,0.2);padding:12px;border-radius:8px;margin:10px 0}
 .error{background:rgba(255,0,0,0.2);padding:12px;border-radius:8px;margin:10px 0}
 </style>
 </head>
 <body>
 <h1>⚠️ Emergency Withdraw</h1>
-<p>Haal je budget op uit oude sessie contracten.</p>
+<p>Klik op de knop van het contract waar jouw sessie vastzit.</p>
 
-<div class="info">
-<b>Oud contract (SPIN token sessie):</b><br>
-0xa4c687cC1802c9ce9B6b024E46129fE3c645fe97
-</div>
-<button onclick="withdraw('0xa4c687cC1802c9ce9B6b024E46129fE3c645fe97')">
-  Withdraw van 0xa4c687...
-</button>
+<div class="info">0x4CfC882b4BE8Cd8573673B9CC431dD730F3c01d3</div>
+<button onclick="withdraw('0x4f0BE3bbEA5CAda66D49325D9280dAF6F0395742')">Withdraw 0x4CfC...</button>
 
-<div class="info">
-<b>Oud contract 2:</b><br>
-0xB2eAa3f36b8D9dA7F73b00d95c662898f9Ad1E74
-</div>
-<button onclick="withdraw('0xB2eAa3f36b8D9dA7F73b00d95c662898f9Ad1E74')">
-  Withdraw van 0xB2eAa3...
-</button>
+<div class="info">0xa4c687cC1802c9ce9B6b024E46129fE3c645fe97</div>
+<button onclick="withdraw('0xa4c687cC1802c9ce9B6b024E46129fE3c645fe97')">Withdraw 0xa4c6...</button>
 
-<div class="info">
-<b>Huidig contract:</b><br>
-0x0B4C816E22681b512a6E523ce862fd634104c1A9
-</div>
-<button onclick="withdraw('0x0B4C816E22681b512a6E523ce862fd634104c1A9')">
-  Withdraw van huidig contract
-</button>
+<div class="info">0xf857789b021f4D55923A09F67741CD113Bfcc872</div>
+<button onclick="withdraw('0x4f0BE3bbEA5CAda66D49325D9280dAF6F0395742')">Withdraw 0xf857...</button>
+
+<div class="info">0x8a0E45C36a8804F70C40a5413cB48B2C0B016081</div>
+<button onclick="withdraw('0x8a0E45C36a8804F70C40a5413cB48B2C0B016081')">Withdraw 0x8a0E...</button>
 
 <div id="log"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
 <script>
-const SM_ABI = ["function emergencyWithdraw() external"];
-
-async function withdraw(contractAddr) {
+async function withdraw(addr) {
   const log = document.getElementById('log');
   try {
-    const provider = window.lukso || window.ethereum;
-    if(!provider) { log.innerHTML = '<div class="error">Geen wallet gevonden!</div>'; return; }
-    
-    const ep = new ethers.BrowserProvider(provider);
+    const p = window.lukso || window.ethereum;
+    if(!p){log.innerHTML='<div class="error">Geen wallet!</div>';return;}
+    const ep = new ethers.BrowserProvider(p);
     const signer = await ep.getSigner();
-    log.innerHTML = '<div class="info">Transactie versturen naar ' + contractAddr.slice(0,10) + '...</div>';
-    
-    const sm = new ethers.Contract(contractAddr, SM_ABI, signer);
-    const tx = await sm.emergencyWithdraw({ gasLimit: 150000 });
-    log.innerHTML = '<div class="info">Wachten op bevestiging...</div>';
+    log.innerHTML = '<div class="info">Versturen naar ' + addr.slice(0,10) + '...</div>';
+    const sm = new ethers.Contract(addr, ["function emergencyWithdraw() external"], signer);
+    const tx = await sm.emergencyWithdraw({gasLimit:150000});
     await tx.wait();
-    log.innerHTML = `<div class="success">✅ Withdraw geslaagd! Tx: ${tx.hash.slice(0,20)}...</div>`;
+    log.innerHTML = '<div class="success">✅ Geslaagd! ' + tx.hash.slice(0,20) + '...</div>';
   } catch(e) {
-    log.innerHTML = `<div class="error">❌ Fout: ${e.message.slice(0,100)}</div>`;
+    log.innerHTML = '<div class="error">❌ ' + e.message.slice(0,100) + '</div>';
   }
 }
 </script>
