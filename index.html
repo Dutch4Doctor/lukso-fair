@@ -288,7 +288,7 @@ details.pw[open] summary::after{content:'▲'}
     <div class="ctrl">
       <button class="btn-spin-big" id="bSpin" onclick="doSpin()" onmousedown="holdStart()" onmouseup="holdStop()" ontouchstart="holdStart()" ontouchend="holdStop()" disabled>
         <span id="bSpinTxt">START SESSION</span>
-        <span class="autospin-label" id="autoSpinLabel">hold for auto spin</span>
+        <span class="autospin-label" id="autoSpinLabel">hold for auto</span>
       </button>
       <div class="btn-row" id="winBtns" style="display:none">
         <button class="btn-sm btn-collect" onclick="collectSession()">
@@ -440,10 +440,10 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x02a7b5C00c3F9D9d6C9F0CEFB681a5e26F882A77',
-  SM:          '0x8a0E45C36a8804F70C40a5413cB48B2C0B016081', // wordt ingevuld na deploy
+  FAIR:        '0x3f78824a64C97F1a24903C972B4915640433d7A9',
+  SM:          '0xf857789b021f4D55923A09F67741CD113Bfcc872', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  NFT:         '0xF11a927078271859911423aE07F4833fAB50d067',
+  NFT:         '0x9B0602eaEcea5a99693F0698caFC871e5c93959d',
   RPC:         'https://rpc.mainnet.lukso.network',
   CHAIN:       42,
   PLATFORM:    'https://profile.link/lukso-fair@fBC4',
@@ -574,16 +574,16 @@ function calcSpinResult(seed, spinIndex) {
 
 function pickSymbol(seed) {
   const r = Number(seed % 100n);
-  if (r < 2)  return 0; // LUKSO    2%  → Mythic NFT
-  if (r < 5)  return 1; // UP       3%  → Rare NFT
-  if (r < 9)  return 2; // Phlamey  4%  → PHLAME
-  if (r < 14) return 3; // Agent    5%  → AGENTPO
-  if (r < 20) return 4; // Elyx     6%  → sLYX groot
-  if (r < 27) return 5; // Emmet    7%  → Uncommon NFT
-  if (r < 36) return 6; // sLYX     9%  → sLYX klein
-  if (r < 48) return 7; // Bills   12%  → LYX groot (0.20)
-  if (r < 62) return 8; // Coins   14%  → LYX klein (0.05)
-  return 9;             // FreeSpin 38% → 3 free spins
+  if (r < 3)  return 0; // LUKSO    3%  → Mythic NFT
+  if (r < 7)  return 1; // UP       4%  → Rare NFT
+  if (r < 12) return 2; // Phlamey  5%  → PHLAME
+  if (r < 18) return 3; // Agent    6%  → AGENTPO
+  if (r < 25) return 4; // Elyx     7%  → 5 sLYX
+  if (r < 37) return 5; // Emmet   12%  → Uncommon NFT
+  if (r < 45) return 6; // sLYX     8%  → 1 sLYX
+  if (r < 55) return 7; // Bills   10%  → 0.20 LYX
+  if (r < 67) return 8; // Coins   12%  → 0.05 LYX
+  return 9;             // FreeSpin 33% → 3 free spins
 }
 
 function determinePrize(r1, r2, r3, spinIndex) {
@@ -594,10 +594,10 @@ function determinePrize(r1, r2, r3, spinIndex) {
   const two = r1===r2||r2===r3;
   if (two) {
     const sym=r1===r2?r1:r2;
-    if(sym<=2) return 11;  // Common NFT (2x LUKSO/UP/Phlamey)
-    if(sym<=6) return 8;   // LYX klein 0.05 (2x Agent/Elyx/Emmet/sLYX)
-    // 2x FreeSpin/Bills/Coins → geen aparte prijs
-    // sym >= 7: twee bills/coins = geen extra prijs
+    if(sym<=2) return 7;   // Common NFT (2x LUKSO/UP/Phlamey)
+    if(sym<=5) return 7;   // Common NFT ook (2x Agent/Elyx/Emmet)
+    if(sym<=6) return 9;   // 0.05 LYX (2x sLYX)
+    // sym >= 7: geen aparte prijs
     return 0;
   }
   // Troostprijs: alleen als spinIndex % 5 == 4 EN geen prijs in laatste 5 spins
@@ -1100,11 +1100,11 @@ function holdStart() {
     const lbl = document.getElementById('autoSpinLabel');
     if(autoSpinActive) {
       btn.classList.add('autospin');
-      if(lbl) lbl.textContent = '🔄 auto spin ON';
+      if(lbl) lbl.textContent = 'hold to stop auto';
       autoSpinLoop();
     } else {
       btn.classList.remove('autospin');
-      if(lbl) lbl.textContent = 'hold for auto spin';
+      if(lbl) lbl.textContent = 'hold for auto';
       clearTimeout(autoSpinTimeout);
     }
   }, HOLD_MS);
@@ -1121,7 +1121,7 @@ function autoSpinLoop() {
     const btn = document.getElementById('bSpin');
     const lbl = document.getElementById('autoSpinLabel');
     if(btn) btn.classList.remove('autospin');
-    if(lbl) lbl.textContent = 'hold for auto spin';
+    if(lbl) lbl.textContent = 'hold for auto';
     return;
   }
   const btn = document.getElementById('bSpin');
@@ -1483,7 +1483,8 @@ function buildPayout(){
   ];
   const rows2x = [
     [img('LUKSO')+img('UP')+img('PHLAMEY'), nl?'2× (zeld.)':'2× (rare)', nl?'🖼️ Common NFT':'🖼️ Common NFT'],
-    [img('LUKSAGENT')+img('ELYX')+img('EMMET')+img('SLYX'), nl?'2× (middel)':'2× (mid)', nl?'💵 0.05 LYX':'💵 0.05 LYX'],
+    [img('LUKSAGENT')+img('ELYX')+img('EMMET'), nl?'2× (middel)':'2× (mid)', nl?'🖼️ Common NFT':'🖼️ Common NFT'],
+    [img('SLYX'), nl?'2× sLYX':'2× sLYX', nl?'💵 0.05 LYX':'💵 0.05 LYX'],
     ['',              nl?'Troostprijs':'Consolation',nl?'🎟️ 1 Gratis Spin (na 5 spins zon prijs)':'🎟️ 1 Free Spin (after 5 spins no prize)'],
   ];
 
