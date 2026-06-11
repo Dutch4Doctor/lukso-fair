@@ -447,10 +447,10 @@ details.pw[open] summary::after{content:'▲'}
 
 const CFG = {
   DEMO:         false,  // Zet op false na mainnet SessionManager deployment
-  FAIR:        '0x5CC4033D6f15150FD492dDC119bDeBaDF386b2e6',
-  SM:          '0xA71A8151E3Cb266e4796fd1a1090F6846C4485f1', // wordt ingevuld na deploy
+  FAIR:        '0x7AB8e0ED96C24561B7A4469ec958f0742b19e6b6',
+  SM:          '0x36737a6C122F36860b4975A56c87d7F8Ca05460f', // wordt ingevuld na deploy
   SPIN_TOKEN:  '0x3E56E8b24cc8E85C1B36e26cBd356C1238f823f7',
-  NFT:         '0x0ca921625bD72e263c7f231b81A7859f5aBdF55d',
+  NFT:         '0x67d6Fb017e6CCE90233e4D6A09b507d00DD2f4ab',
   RPC:         'https://rpc.mainnet.lukso.network',
   CHAIN:       42,
   PLATFORM:    'https://profile.link/lukso-fair@fBC4',
@@ -529,7 +529,7 @@ const I18N = {
     w_uncommon:'🌟 Uncommon NFT!', w_common:'🖼️ Common NFT!',
     w_phlame:'🔥 PHLAME tokens!', w_agentpo:'🤖 AGENTPO tokens!',
     w_slyx:'💎 sLYX tokens!', w_lyxlg:'💰 Big LYX win!',
-    w_lyxsm:'💵 LYX!', w_free5:'🎟️ 5 Free Spins!',
+    w_lyxsm:'💵 LYX!', w_lyxcoins:'🪙 LYX win!', w_free5:'🎟️ 5 Free Spins!',
     w_free3:'🎟️ 3 Free Spins!', w_cons:'🎟️ Free Spin!',
     no_win:'No win this time!',
     connect_msg:'Connect your UP to play!',
@@ -551,7 +551,7 @@ const I18N = {
     w_uncommon:'🌟 Uncommon NFT!', w_common:'🖼️ Common NFT!',
     w_phlame:'🔥 PHLAME tokens!', w_agentpo:'🤖 AGENTPO tokens!',
     w_slyx:'💎 sLYX tokens!', w_lyxlg:'💰 Grote LYX prijs!',
-    w_lyxsm:'💵 LYX!', w_free5:'🎟️ 5 Gratis Spins!',
+    w_lyxsm:'💵 LYX!', w_lyxcoins:'🪙 LYX prijs!', w_free5:'🎟️ 5 Gratis Spins!',
     w_free3:'🎟️ 3 Gratis Spins!', w_cons:'🎟️ Gratis Spin!',
     no_win:'Niet gewonnen!',
     connect_msg:'Verbind je UP om te spelen!',
@@ -581,41 +581,41 @@ function calcSpinResult(seed, spinIndex) {
 
 function pickSymbol(seed) {
   const r = Number(seed % 100n);
-  if (r < 3)  return 0; // LUKSO    3%  → Mythic NFT
-  if (r < 7)  return 1; // UP       4%  → Rare NFT
-  if (r < 12) return 2; // Phlamey  5%  → PHLAME
-  if (r < 18) return 3; // Agent    6%  → AGENTPO
-  if (r < 25) return 4; // Elyx     7%  → 5 sLYX
-  if (r < 37) return 5; // Emmet   12%  → Uncommon NFT
-  if (r < 45) return 6; // sLYX     8%  → 1 sLYX
-  if (r < 55) return 7; // Bills   10%  → 0.20 LYX
-  if (r < 67) return 8; // Coins   12%  → 0.05 LYX
+  if (r < 4)  return 0; // LUKSO    4%  → Mythic NFT
+  if (r < 10) return 1; // UP       6%  → Rare NFT
+  if (r < 15) return 2; // Phlamey  5%  → PHLAME
+  if (r < 21) return 3; // Agent    6%  → AGENTPO
+  if (r < 28) return 4; // Elyx     7%  → 12 sLYX
+  if (r < 39) return 5; // Emmet   11%  → Uncommon NFT
+  if (r < 47) return 6; // sLYX     8%  → 3 sLYX
+  if (r < 57) return 7; // Bills   10%  → 0.50 LYX
+  if (r < 68) return 8; // Coins   11%  → 0.25 LYX
+  return 9;             // FreeSpin 32% → 3 gratis spins
   return 9;             // FreeSpin 33% → 3 free spins
 }
 
 function determinePrize(r1, r2, r3, spinIndex) {
   if (r1===r2 && r2===r3) {
-    const map={0:1,1:2,2:3,3:4,4:5,5:6,6:13,7:8,8:9,9:11};
+    // 3x: LUKSO→Mythic, UP→Rare, Phlamey→PHLAME, Agent→AGENTPO, Elyx→12sLYX,
+    //     Emmet→Uncommon, sLYX→3sLYX, Bills→0.50LYX, Coins→0.25LYX, FreeSpin→3spins
+    const map={0:1,1:2,2:3,3:4,4:5,5:6,6:13,7:8,8:14,9:11};
     return map[r1]??0;
   }
   const two = r1===r2||r2===r3;
   if (two) {
     const sym=r1===r2?r1:r2;
-    if(sym<=2) return 6;   // Uncommon NFT (2x LUKSO/UP/Phlamey)
-    if(sym<=5) return 7;   // Common NFT (2x Agent/Elyx/Emmet)
-    // 2x sLYX of hoger = geen prijs
-    // sym >= 7: geen aparte prijs
-    return 0;
+    if(sym<=2) return 7;   // Common NFT (2x LUKSO/UP/Phlamey)
+    if(sym<=6) return 9;   // 0.125 LYX (2x Agent/Elyx/Emmet/sLYX)
+    return 0;              // Laag 2x → geen prijs
   }
-  // Troostprijs: alleen als spinIndex % 5 == 4 EN geen prijs in laatste 5 spins
-  // Dit wordt bijgehouden door de frontend via spinsSinceLastPrize
-  return 0; // Frontend voegt consolation toe indien nodig
+  // Troostprijs wordt door het contract afgehandeld (guaranteed-systeem)
+  return 0;
 }
 
 function prizeMsg(pt) {
   const map={1:'w_jackpot',2:'w_rare',3:'w_phlame',4:'w_agentpo',5:'w_slyx',
              6:'w_uncommon',7:'w_common',8:'w_lyxlg',9:'w_lyxsm',
-             11:'w_free3',12:'w_cons',13:'w_slyx'};
+             11:'w_free3',12:'w_cons',13:'w_slyx',14:'w_lyxcoins'};
   return map[pt]?t(map[pt]):t('no_win');
 }
 
@@ -689,7 +689,7 @@ function buildLights() {
   for(let i=0;i<30;i++){const d=document.createElement('div');d.className='light '+cols[i%cols.length];c.appendChild(d);}
 }
 
-function buildPool(){const p=[];SYMBOLS.forEach((s,i)=>{for(let w=0;w<[2,3,4,5,6,7,9,12,14,38][i];w++)p.push(s);});return p;}
+function buildPool(){const p=[];SYMBOLS.forEach((s,i)=>{for(let w=0;w<[4,6,5,6,7,11,8,10,11,32][i];w++)p.push(s);});return p;}
 
 function buildReels(){
   const p=buildPool();
@@ -1496,20 +1496,20 @@ function buildPayout(){
   const rows3x = [
     [img('LUKSO'),    nl?'3× LUKSO'   :'3× LUKSO',    nl?'🏆 Mythic NFT!'        :'🏆 Mythic NFT!'],
     [img('UP'),       nl?'3× UP'      :'3× UP',        nl?'⭐ Rare NFT'           :'⭐ Rare NFT'],
-    [img('PHLAMEY'),  nl?'3× Phlamey' :'3× Phlamey',   nl?'🔥 PHLAME tokens'     :'🔥 PHLAME tokens'],
-    [img('LUKSAGENT'),nl?'3× Agent'   :'3× Agent',     nl?'🤖 AGENTPO tokens'    :'🤖 AGENTPO tokens'],
+    [img('PHLAMEY'),  nl?'3× Phlamey' :'3× Phlamey',   nl?'🔥 400 PHLAME'        :'🔥 400 PHLAME'],
+    [img('LUKSAGENT'),nl?'3× Agent'   :'3× Agent',     nl?'🤖 200 AGENTPO'       :'🤖 200 AGENTPO'],
     [img('EMMET'),    nl?'3× Emmet'   :'3× Emmet',     nl?'🌟 Uncommon NFT'      :'🌟 Uncommon NFT'],
-    [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'💎 5 sLYX'            :'💎 5 sLYX'],
-    [img('SLYX'),     nl?'3× sLYX'    :'3× sLYX',      nl?'💎 1 sLYX'            :'💎 1 sLYX'],
-    [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💰 0.20 LYX'          :'💰 0.20 LYX'],
-    [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'💵 0.05 LYX'          :'💵 0.05 LYX'],
+    [img('ELYX'),     nl?'3× Elyx'    :'3× Elyx',      nl?'💎 12 sLYX'           :'💎 12 sLYX'],
+    [img('SLYX'),     nl?'3× sLYX'    :'3× sLYX',      nl?'💎 3 sLYX'            :'💎 3 sLYX'],
+    [img('BILLS'),    nl?'3× Biljetten':'3× Bills',     nl?'💰 0.50 LYX'          :'💰 0.50 LYX'],
+    [img('COINS'),    nl?'3× Munten'  :'3× Coins',     nl?'🪙 0.25 LYX'          :'🪙 0.25 LYX'],
     [img('FREESPIN'), nl?'3× FreeSpin':'3× FreeSpin',  nl?'🎟️ 3 Gratis Spins'   :'🎟️ 3 Free Spins'],
   ];
   const rows2x = [
-    [img('LUKSO')+img('UP')+img('PHLAMEY'), nl?'2× (zeld.)':'2× (rare)', nl?'🌟 Uncommon NFT':'🌟 Uncommon NFT'],
-    [img('LUKSAGENT')+img('ELYX')+img('EMMET'), nl?'2× (middel)':'2× (mid)', nl?'🖼️ Common NFT':'🖼️ Common NFT'],
+    [img('LUKSO')+img('UP')+img('PHLAMEY'), nl?'2× (zeld.)':'2× (rare)', nl?'🖼️ Common NFT':'🖼️ Common NFT'],
+    [img('LUKSAGENT')+img('ELYX')+img('EMMET')+img('SLYX'), nl?'2× (middel)':'2× (mid)', nl?'💵 0.125 LYX':'💵 0.125 LYX'],
 
-    ['',              nl?'Troostprijs':'Consolation',nl?'🎟️ 1 Gratis Spin (na 5 spins zon prijs)':'🎟️ 1 Free Spin (after 5 spins no prize)'],
+    ['',              nl?'Troostprijs':'Consolation',nl?'🎟️ 1 Gratis Spin (na 5 spins zonder prijs)':'🎟️ 1 Free Spin (after 5 spins no prize)'],
   ];
 
   const tbl = document.getElementById('payTbl');
